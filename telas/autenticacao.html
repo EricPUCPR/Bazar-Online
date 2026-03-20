@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Login</title>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <div class="botao">Criar conta</div>
+                <div class="botao">Autenticar</div>
+            </nav>
+        </header>
+        <main>
+            <section> 
+                <h1>Acesse sua conta aqui: </h1>
+                <form id="autentica">
+                    <label for="email">Email: </label>
+                    <input type="email" name="email">
+                    <label for="senha">Senha: </label>
+                    <input type="search" name="senha">
+                    
+                </form>
+            
+            </section>
+        </main>
+        <footer>
+            <p>Agradecemos por optar pelo nosso site!!</p>
+            <p>^.^</p>
+        </footer>
+
+        <script>
+            document.getElementById("autentica").addEventListener("submit", function(e){
+                e.preventDefault();
+            })
+        </script>
+
+    </body>
+</html>
