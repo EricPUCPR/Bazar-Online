@@ -13,14 +13,14 @@
 
     
     $stmt = conexao -> prepare("SELECT $senha FROM $tabela where $email = ?"); //monta pesquisa no banco
-    $stmt ->  bind_param("s", $usuario_email); // 
+    $stmt ->  bind_param("s", $usuario_email); // adciona entrada do usuario a busca negando sqli
     $stmt -> execute();
     $senha = $stmt -> get_result();
 
     if ($usuario_senha == $senha){
-        echo json_encode(["success" => true, "message" => "Autenticado com sucesso"]);
+        echo json_encode(["success" => true, "mensagem" => "Autenticado com sucesso"]);
     } else {
-        echo json_encode(["success" => false, "mensage" => "Falha na autenticação"]);
+        echo json_encode(["success" => false, "mensagem" => "Falha na autenticação"]);
     }
 
 
