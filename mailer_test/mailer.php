@@ -14,14 +14,17 @@
     $mail->CharSet = "UTF-8";
     $mail->SMTPDebug = 0;
     $mail->SMTPAuth = true;
-    $mail->Host = 'smtp.gmail.com'
+    $mail->SMTPSecure = 'ssl';
+    $mail->Host = 'smtp.gmail.com';
     $mail->Port = 465;
 
     //Detalhes do envio de E-Mail
     $mail->Username = "bazaronline.expcri@gmail.com";
-    $mail->Password = "nyrj lbvw rvgb oqzt"
-    $mail->SetForm('bazaronline.expcri@gmail.com', "Doe Amor");
+    $mail->Password = "nyrj lbvw rvgb oqzt";
+    $mail->setForm('bazaronline.expcri@gmail.com', "Doe Amor");
+
     $mail->addAddress("bazaronline.expcri@gmail.com", "");
+
     $mail->Subject = "Light";
     $mail->msgHTML("<h1></h1>");
 
