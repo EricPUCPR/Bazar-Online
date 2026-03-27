@@ -1,4 +1,5 @@
 <?php
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -10,8 +11,8 @@
 <body>
 
     <div class="card">
-        <h2>Confirme seu acesso</h2>
-        <p>Digite o e-mail utilizado no cadastro para receber o link de ativação.</p>
+        <h2>Confirme seu e-mail</h2>
+        <p>Digite o e-mail utilizado no cadastro para receber o link de confirmação.</p>
 
         <form>
             <div class="input-group">
@@ -23,7 +24,7 @@
         </form>
 
         <div class="footer-link">
-            Errou o e-mail? <a href="#">Voltar para o cadastro</a>
+            Errou o e-mail? <a href="../cadastro_usuario.html">Voltar para o cadastro</a>
         </div>
     </div>
 
