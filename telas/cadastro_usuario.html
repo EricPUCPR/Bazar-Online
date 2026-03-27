@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <title>Cadastro</title>
     </head>
-    <body>
+    <body> aramis
         <header>
             <nav>
                 <div class="botao">Criar conta</div>
@@ -14,7 +14,7 @@
         <main>
             <section> 
                 <h1>Crie sua conta aqui: </h1>
-                <form id="autentica">
+                <form id="cadastra">
 
                     <label for="nome">Nome completo: </label>
                     <input type="text" name="nome">
@@ -33,6 +33,8 @@
                     <label for="senha2">Senha: </label>
                     <input type="password" name="senha2">
 
+                    <p id="feedback"></p>
+
                     <button type="submit">Enviar</button>
                     
                 </form>
@@ -45,8 +47,28 @@
         </footer>
 
         <script>
-            document.getElementById("autentica").addEventListener("submit", function(e){
+            document.getElementById("cadastra").addEventListener("submit", function(e){
                 e.preventDefault();
+                const formData = new FormData(this);
+                fetch("../php/cadasteo_usuario.php",{
+                    method: "POST",
+                    body: formData
+                }).then(response => response.json())
+                .then(data =>{
+                    const retorno = getElementById("feedback");
+                    //retorna feedback conforme aceito ou recusa pelo back
+                    retorno.textContent = data.mensage;
+                    //feedback positivo retorna em verde e negativo em vermelho
+                    retorno.style.color = data.success ? "green" : "red"; 
+
+                    // if (data.success) {
+                    // sessionStorage.setItem("usuario_nome", formData.get("username"));
+                    // sessionStorage.setItem("loggedIn", "true");
+                    // window.location.href = "index.html";
+                    // }
+                })
+
+
             })
         </script>
 

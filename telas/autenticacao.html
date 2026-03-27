@@ -34,6 +34,23 @@
         <script>
             document.getElementById("autentica").addEventListener("submit", function(e){
                 e.preventDefault();
+                const formData = new FormData(this);
+                fetch("../php/autentica.php",{
+                    body: formData
+                }).then(response => response.json())
+                .then(data =>{
+                    const retorno = getElementById("feedback");
+                    //retorna feedback conforme aceito ou recusa pelo back
+                    retorno.textContent = data.mensage;
+                    //feedback positivo retorna em verde e negativo em vermelho
+                    retorno.style.color = data.success ? "green" : "red"; 
+
+                    // if (data.success) {
+                    // sessionStorage.setItem("usuario_nome", formData.get("username"));
+                    // sessionStorage.setItem("loggedIn", "true");
+                    // window.location.href = "index.html";
+                    // }
+                })
             })
         </script>
 
