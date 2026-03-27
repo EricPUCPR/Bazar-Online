@@ -27,6 +27,6 @@
             Errou o e-mail? <a href="../cadastro_usuario.html">Voltar para o cadastro</a>
         </div>
     </div>
-
+    <script src="script.js"></script>
 </body>
 </html>
