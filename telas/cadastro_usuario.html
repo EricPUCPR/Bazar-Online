@@ -8,34 +8,35 @@
     <body>
         <header>
             <nav>
-                <div class="botao"><a href="autenticacao.html">Autenticar</a></div>
+                <div class="botao"><a href="autenticacao.html">Acessar conta</a></div>
+                <div class="botao"><a href="../index.html">Voltar</a></div>
             </nav>
         </header>
         <main>
             <section class="form"> 
-                <h1></h1>
                 <form id="cadastra">
                     <fieldset>Crie sua conta aqui: </fieldset>
 
                     <label for="nome">Digite seu Nome completo: </label>
-                    <input type="text" name="nome"><br>
+                    <input type="text" name="nome">
                     
                     <label for="email">Email: </label>
                     <input type="email" name="email">
                     <span id="erro-email" style="color: red; display: none;">Formato de e-mail inválido!</span>
                     
                     <label for="telefone">Digite seu telefone: </label>
-                    <input type="text" name="telefone"><br>
+                    <input type="text" name="telefone">
 
                     <label for="cep">Digite seu CEP: </label>
-                    <input type="text" name="cep"> <br>
+                    <input type="text" name="cep"> 
+                    <hr>
 
                     <label for="senha1">escolha uma senha: </label>
-                    <input type="password" name="senha1"><br>
-                    <label for="senha2">comfirme sua senha: </label>
-                    <input type="password" name="senha2"><br>
+                    <input type="password" name="senha1">
+                    <label for="senha2">confirme sua senha: </label>
+                    <input type="password" name="senha2">
 
-                    <p id="feedback"></p><br>
+                    <span id="feedback"></span>
 
                     <button type="submit">Enviar</button>
                     
@@ -49,28 +50,42 @@
 
         <script>
             document.getElementById("cadastra").addEventListener("submit", function(e){
-                e.preventDefault();
-                const formData = new FormData(this);
-                fetch("../php/cadasteo_usuario.php",{
-                    method: "POST",
-                    body: formData
-                }).then(response => response.json())
-                .then(data =>{
-                    const retorno = getElementById("feedback");
-                    //retorna feedback conforme aceito ou recusa pelo back
-                    retorno.textContent = data.mensage;
-                    //feedback positivo retorna em verde e negativo em vermelho
-                    retorno.style.color = data.success ? "green" : "red"; 
+            e.preventDefault();
+            const formData = new FormData(this);
+            //cria onde vamos retornar o erro ou sucesso
+            const feedback = document.getElementById("feedback")
 
-                    // if (data.success) {
-                    // sessionStorage.setItem("usuario_nome", formData.get("username"));
-                    // sessionStorage.setItem("loggedIn", "true");
-                    // window.location.href = "index.html";
-                    // }
-                })
+            //compara se as senhas sao iguais
+            if(formData.get("senha1") !== formData.get("senha2")){
+                feedback.textContent = "As senhas não conhecidem";
+                feedback.style.color = "red"
+                return;
+            }
 
-
+            //declara pagina php destilo, metodo de transmissão e q
+            fetch("../php/cadastro_usuario.php",{
+                method: "POST",
+                body: formData
             })
+            .then(response => response.json())
+            .then(data =>{ //toma ação com base nos dados retornados
+                    //retorna feedback conforme aceito ou recusa pelo back
+                    feedback.textContent = data.mensage;
+                    //feedback positivo retorna em verde e negativo em vermelho
+                    feedback.style.color = data.success ? "green" : "red"; 
+
+                    // Se deu certo, espera 2 segundos e leva a a pagina principal
+                    if (data.success) {
+                        setTimeout(() => {
+                            window.location.href = "../index.html";
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    feedback.textContent = "Erro interno no servidor.";
+                });
+                })
         </script>
 
     </body>
