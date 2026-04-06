@@ -29,16 +29,26 @@
 
                     <label for="cep">Digite seu CEP: </label>
                     <input type="text" name="cep"> 
-                    <hr>
 
                     <label for="senha1">escolha uma senha: </label>
-                    <input type="password" name="senha1">
-                    <label for="senha2">confirme sua senha: </label>
-                    <input type="password" name="senha2">
+                    <input type="password" name="senha1" id="senha1">
+                    <label for="senha2" id="label2">confirme sua senha: </label>
+                    <input type="password" name="senha2" id="senha2">
+
+                    <div id="orientacao">
+                        <h4>Sua senha deve conter:</h4>
+                        <p >
+                            Minimo de 8 caractéres; <br>
+                            Letras maiusculas;<br>
+                            Números;<br>
+                            Caracteres especiais;
+                        </p>
+                    </div>
+
 
                     <span id="feedback"></span>
 
-                    <button type="submit">Enviar</button>
+                    <button type="submit" id="enviar">Enviar</button>
                     
                 </form>
             
@@ -49,29 +59,76 @@
         </footer>
 
         <script>
+            // cria onde vamos retornar o erro ou sucesso
+            const feedback = document.getElementById("feedback");
+            const senha1 = document.getElementById("senha1");
+            const senha2 = document.getElementById("senha2");
+            const label2 = document.getElementById("label2");
+            const orientacao = document.getElementById("orientacao");
+            const botao = document.getElementById("enviar");
+
+            senha2.style.display = "none";
+            label2.style.display = "none";
+            botao.style.display = "none";
+
+
+            // garante que a senha seja forte
+            senha1.addEventListener('input', () => {
+                const regexSem123 = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#]).{8,}$/;
+                // (?=.*[A-Z]) -> Garante no minimo 
+                // (?=.*\d) -> Garante no minimo 
+                // (?=.*[@$!%*?&#]) -> Garante no minimo um desses caracteres especiais
+                // .{8,} -> garante minimo de 8 caracteres
+
+                // se a senha for fraca informa usuario e oculta itens
+                if (!regexSem123.test(senha1.value)) {
+                    senha1.style.border = 'solid 3px red';
+                    feedback.textContent = "Sua senha é Beta"
+                    feedback.style.color = 'red';
+
+                    orientacao.style.display = "flex";
+                    senha2.style.display = "none";
+                    label2.style.display = "none";
+                    botao.style.display = "none";
+                } else { // se a senha for forte
+                    senha1.style.border = 'solid 3px green';
+                    feedback.textContent = ""
+
+                    orientacao.style.display = "none";
+                    senha2.style.display = "flex";
+                    label2.style.display = "flex";
+                }
+            });
+            
+            // compara se as senhas sao iguais
+                senha2.addEventListener('input', () =>{                
+                if(senha1.value !== senha2.value || senha2.value === ""){
+                    feedback.textContent = "As senhas não conhecidem";
+                    senha2.style.border = 'solid 3px red';
+                    botao.style.display = "none";
+                } else {
+                    feedback.textContent = "";
+                    senha2.style.border = 'solid 3px green';
+                    botao.style.display = "flex";
+                }
+            })
+            
+
             document.getElementById("cadastra").addEventListener("submit", function(e){
             e.preventDefault();
+            
             const formData = new FormData(this);
-            //cria onde vamos retornar o erro ou sucesso
-            const feedback = document.getElementById("feedback")
 
-            //compara se as senhas sao iguais
-            if(formData.get("senha1") !== formData.get("senha2")){
-                feedback.textContent = "As senhas não conhecidem";
-                feedback.style.color = "red"
-                return;
-            }
-
-            //declara pagina php destilo, metodo de transmissão e q
+            // declara pagina php destilo, metodo de transmissão e q
             fetch("../php/cadastro_usuario.php",{
                 method: "POST",
                 body: formData
             })
             .then(response => response.json())
-            .then(data =>{ //toma ação com base nos dados retornados
-                    //retorna feedback conforme aceito ou recusa pelo back
+            .then(data =>{ // toma ação com base nos dados retornados
+                    // retorna feedback conforme aceito ou recusa pelo back
                     feedback.textContent = data.mensage;
-                    //feedback positivo retorna em verde e negativo em vermelho
+                    // feedback positivo retorna em verde e negativo em vermelho
                     feedback.style.color = data.success ? "green" : "red"; 
 
                     // Se deu certo, espera 2 segundos e leva a a pagina principal

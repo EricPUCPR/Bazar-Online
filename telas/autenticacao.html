@@ -49,8 +49,18 @@
                     feedback.textContent = data.mensage;
                     //feedback positivo retorna em verde e negativo em vermelho
                     feedback.style.color = data.success ? "green" : "red"; 
-
+                
+                        // Se deu certo, espera 2 segundos e leva a a pagina principal
+                    if (data.success) {
+                        setTimeout(() => {
+                            window.location.href = "../index.html";
+                        }, 2000);
+                    }
                 })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    feedback.textContent = "Erro interno no servidor.";
+                });
             })
         </script>
 

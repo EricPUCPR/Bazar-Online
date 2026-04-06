@@ -12,20 +12,19 @@
             </nav>
         </header>
         <main>
-            <section> 
-                <h1>Publique sua roupa: </h1>
-                <form id="autentica">
-                    <label for="Tipo de Roupa">Digite o tipo da roupa: </label>
-                    <input type="text" name="text">
-                    <label for="Tamanho">Digite o tamanho da roupa: </label>
-                    <input type="text" name="text">
-                    <label for="Sexo">Digite o sexo da roupa: </label>
-                    <label for="Sexo">Digite o sexo da roupa: </label>
-                    <select id="Sexo" name="Sexo">
-                    <option value="Masculino">Masculino</option>
-                    <option value="Feminino">Feminino</option>
-                    <option value="Unissex">Unissex</option> </select>                  
-                    
+            <section id="form"> 
+                <form id="cadastra">
+                    <fieldset>Publique sua roupa aqui: </fieldset>
+                    <label for="tipo_roupa">Digite o tipo da roupa: </label>
+                    <input type="text" name="tipo">
+                    <label for="tamanho_roupa">Digite o tamanho da roupa: </label>
+                    <input type="text" name="tamanho">
+                    <label for="sexo">Digite o sexo da roupa: </label>
+                    <select id="Sexo" name="sexo">
+                        <option value="Masculino">Masculino</option>
+                        <option value="Feminino">Feminino</option>
+                        <option value="Unissex">Unissex</option> 
+                    </select>                  
                 </form>
             
             </section>
@@ -34,5 +33,39 @@
             <p>Agradecemos por optar pelo nosso site!!</p>
             <p>^.^</p>
         </footer>
+        <script>
+            document.getElementById("cadastra").addEventListener("submit", function(e){
+            e.preventDefault();
+            const formData = new FormData(this);
+            //cria onde vamos retornar o erro ou sucesso
+            const feedback = document.getElementById("feedback")
+
+            //declara pagina php destilo, metodo de transmissão e q
+            fetch("../php/cadastro_roupa.php",{
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data =>{ //toma ação com base nos dados retornados
+                    //retorna feedback conforme aceito ou recusa pelo back
+                    feedback.textContent = data.mensage;
+                    //feedback positivo retorna em verde e negativo em vermelho
+                    feedback.style.color = data.success ? "green" : "red"; 
+
+                    // Se deu certo, espera 2 segundos e leva a a pagina da pessoa publicadora
+                    /*
+                    if (data.success) {
+                        setTimeout(() => {
+                            window.location.href = "../index.html";
+                        }, 2000);
+                    }
+                    */
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    feedback.textContent = "Erro interno no servidor.";
+                });
+                })
+        </script>
     </body>
 </html>
