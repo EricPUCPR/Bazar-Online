@@ -44,7 +44,11 @@
                             Caracteres especiais;
                         </p>
                     </div>
-
+                    
+                    <div id="Termos" style="margin-top: 15px; display: flex; align-items: center;">
+                        <input type="checkbox" id="aceito" name="aceito" style="width: auto; margin-right: 8px;">
+                        <label for="aceito" style="margin: 0;">Li e aceito os <a href="#" id="AbrirTermos" style="color: blue; text-decoration: underline;">Termos de Uso</a>.</label>
+                    </div>
 
                     <span id="feedback"></span>
 
@@ -66,11 +70,22 @@
             const label2 = document.getElementById("label2");
             const orientacao = document.getElementById("orientacao");
             const botao = document.getElementById("enviar");
+            const checkboxAceito = document.getElementById("aceito");
 
             senha2.style.display = "none";
             label2.style.display = "none";
             botao.style.display = "none";
 
+            function verificarBotao() {
+                const senhasIguais = (senha1.value === senha2.value && senha2.value !== "");
+                const termosAceitos = checkboxAceito.checked;
+
+                if (senhasIguais && termosAceitos) {
+                    botao.style.display = "flex";
+                } else {
+                    botao.style.display = "none";
+                }
+            }
 
             // garante que a senha seja forte
             senha1.addEventListener('input', () => {
@@ -97,35 +112,39 @@
                     orientacao.style.display = "none";
                     senha2.style.display = "flex";
                     label2.style.display = "flex";
+                    verificarBotao();
                 }
             });
             
             // compara se as senhas sao iguais
-                senha2.addEventListener('input', () =>{                
+            senha2.addEventListener('input', () =>{                
                 if(senha1.value !== senha2.value || senha2.value === ""){
                     feedback.textContent = "As senhas não conhecidem";
                     senha2.style.border = 'solid 3px red';
-                    botao.style.display = "none";
                 } else {
                     feedback.textContent = "";
                     senha2.style.border = 'solid 3px green';
-                    botao.style.display = "flex";
                 }
-            })
+                verificarBotao();
+            });
+
+            checkboxAceito.addEventListener('change', () => {
+                verificarBotao();
+            });
             
 
             document.getElementById("cadastra").addEventListener("submit", function(e){
-            e.preventDefault();
-            
-            const formData = new FormData(this);
+                e.preventDefault();
+                
+                const formData = new FormData(this);
 
-            // declara pagina php destilo, metodo de transmissão e q
-            fetch("../php/cadastro_usuario.php",{
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data =>{ // toma ação com base nos dados retornados
+                // declara pagina php destilo, metodo de transmissão e q
+                fetch("../php/cadastro_usuario.php",{
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data =>{ // toma ação com base nos dados retornados
                     // retorna feedback conforme aceito ou recusa pelo back
                     feedback.textContent = data.mensage;
                     // feedback positivo retorna em verde e negativo em vermelho
@@ -142,8 +161,56 @@
                     console.error('Erro:', error);
                     feedback.textContent = "Erro interno no servidor.";
                 });
-                })
+            });
         </script>
 
+        <div id="Fundo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999;"></div>
+
+        <div id="TextoTermos" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 600px; max-height: 80vh; overflow-y: auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1000; text-align: justify; color: black;">
+            
+            <span id="Fechar" style="float: right; cursor: pointer; font-weight: bold; font-size: 20px;">&times;</span>
+            
+            <h3>Termos de Uso e Política de Privacidade</h3>
+            
+            <p>Estes termos de uso e política de privacidade segue de acordo com que a Lei 13.709, de 14 de agosto de 2018, vulgo Lei Geral de Proteção de Dados (LGPD) estabeleceu em território nacional.</p>
+            
+            <p>O Bazar Online ficará responsável pelos dados cadastrados pelo usuário(a): garantir privacidade aos dados sensíveis e de transmitir transparência sobre tudo que acontece com os dados informados.</p>
+            
+            <p>Ao aceitar este termo, você concorda em ter mais de 18 anos de idade e que seus dados serão usados para o funcionamento do sistema que acessará e será responsável em selecionar um meio de comunicação para comunicar com o remetente.</p>
+            
+            <p>O Bazar Online não terá responsabilidade legal por alguma infração cometida em outro meio de comunicação.</p>
+            
+            <p>Além disso, qualquer mídia submetida para doação poderá ser utilizada para publicidade do serviço e estará em exposição em forma de pesquisa, ou, possivelmente nos destaques do Bazar (ambos pertencem ao catálogo).</p>
+            
+            <p>O usuário terá permissão para alterar ou excluir seus próprios dados, além de poder desativar a conta por período determinado ou indeterminado, estas opções estarão presentes na aba "conta".</p>
+            
+            <p>Os dados da conta constituem de: Nome Completo, foto de perfil, roupas cadastradas (dados das roupas: tipo de roupa, foto, tamanho e sexo).</p>
+            
+            <p>Os dados sensíveis constituem de: email, telefone, data de nascimento, senha e endereço, com o telefone ou endereço permitidos após o consentimento do usuário (o endereço combinado entre dois usuários não faz parte do Bazar Online, isso será discutido pelo meio de comunicação escolhido, porém uma estimativa estará disponível para ter compreensão dos lugares que poderá ir para doação caso seja pessoalmente ou para que o usuário obtenha noção de quais roupas ele provavelmente pode chegar em um acordo. A estimativa pode incluir estado, região metropolitana, município e/ou bairro).</p>
+        </div>
+
+        <script>
+            const Abrir = document.getElementById('AbrirTermos');
+            const Fechar = document.getElementById('Fechar');
+            const TextoTermos = document.getElementById('TextoTermos');
+            const Fundo = document.getElementById('Fundo');
+
+            // Alterna entre mostrar e esconder o texto
+            Abrir.addEventListener('click', function(event) {
+                event.preventDefault(); // Evita que a página pule para o topo
+                TextoTermos.style.display = 'block';
+                Fundo.style.display = 'block';
+            });
+
+            Fechar.addEventListener('click', function() {
+                TextoTermos.style.display = 'none';
+                Fundo.style.display = 'none';
+            });
+
+            Fundo.addEventListener('click', function() {
+                TextoTermos.style.display = 'none';
+                Fundo.style.display = 'none';
+            });
+        </script>
     </body>
 </html>
