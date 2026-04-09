@@ -1,8 +1,6 @@
 <?php
-    $usuario = 'root';
-    $senha = 'oitdbem';
-    $database = 'banco';
-    $host = 'localhost';
+
+    require_once 'rtdados.php';
 
     $mysqli = new mysqli ($host, $usuario, $senha, $database);
 
