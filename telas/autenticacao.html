@@ -18,13 +18,13 @@
                 <form id="autentica">
                     <fieldset>Acesse sua conta aqui: </fieldset>
                     <label for="email">Email: </label>
-                    <input type="email" name="email">
+                    <input type="email" name="email" id="email" >
                     <label for="senha">Senha: </label>
-                    <input type="password" name="senha">
+                    <input type="password" name="senha" id="senha">
                     
                     <span id="feedback"></span>
 
-                    <button type="submit">Acessar</button>
+                    <button type="submit" id="botao">Acessar</button>
                     
                 </form>
             
@@ -36,6 +36,34 @@
         </footer>
 
         <script>
+            const feedback = document.getElementById("feedback");
+            const email = document.getElementById("email");
+            const senha = document.getElementById("senha");
+            const botao = document.getElementById("botao");
+            
+            document.addEventListener( 'input', () => {
+                const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const regexSenha = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#]).{8,}$/;
+
+                const emailOK = regexEmail.test(email.value);
+                const senhaForte = regexSenha.test(senha.value);
+
+                if (!emailOK) {
+                    botao.style.display = "none";
+                    feedback.textContent = "padrão de email invalido!";
+                    feedback.style.color =  "red";
+                } else {
+                    if(senhaForte){
+                        botao.style.display = "block";
+                        feedback.style.display = "none";
+                    } else {
+                        botao.style.display = "block";
+                        feedback.style.display = "none";
+                        feedback.textContent = "usuario ou senha incorretos";
+                    }
+                    
+                }
+            })
             document.getElementById("autentica").addEventListener("submit", function(e){
                 e.preventDefault();
 
