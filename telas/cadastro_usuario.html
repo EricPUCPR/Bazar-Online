@@ -18,25 +18,25 @@
                     <fieldset>Crie sua conta aqui: </fieldset>
 
                     <label for="nome">Nome completo: </label>
-                    <input type="text" name="nome">
+                    <input type="text" name="nome" placeholder="Nome">
                     
                     <label for="email">Email: </label>
-                    <input type="email" name="email">
+                    <input type="email" name="email" placeholder="Email">
                     <span id="erro-email" style="color: red; display: none;">Formato de e-mail inválido!</span>
 
                     <label for="nascimento">Data de Nascimento: </label>
-                    <input type="text" name="nascimento">
+                    <input type="text" name="nascimento" placeholder="Nascimento">
                     
                     <label for="telefone">Telefone: </label>
-                    <input type="text" name="telefone">
+                    <input type="text" name="telefone" placeholder="Telefone">
 
                     <label for="cep">CEP: </label>
-                    <input type="text" name="cep"> 
+                    <input type="text" name="cep" placeholder="CEP"> 
 
                     <label for="senha1">Escolha uma Senha: </label>
-                    <input type="password" name="senha1" id="senha1">
+                    <input type="password" name="senha1" id="senha1" placeholder="Senha">
                     <label for="senha2" id="label2">confirme sua senha: </label>
-                    <input type="password" name="senha2" id="senha2">
+                    <input type="password" name="senha2" id="senha2" placeholder="Confirmação de senha">
 
                     <div id="orientacao">
                         <h4>Sua senha deve conter:</h4>
@@ -160,7 +160,7 @@
                     feedback.textContent = "Sua senha é Beta"
                     feedback.style.color = 'red';
 
-                    orientacao.style.display = "flex";
+                    orientacao.style.display = "block";
                     senha2.style.display = "none";
                     label2.style.display = "none";
                     botao.style.display = "none";
