@@ -1,14 +1,42 @@
+/* RESET E BODY */
 body {
     margin: 0;
     font-family: Arial;
     background-color: #7fa6d6;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 100vh;
 }
 
-.container {
+/* HEADER / NAV */
+header {
+    position: absolute;
+    top: 20px;
+}
+
+nav {
+    display: flex;
+    gap: 10px;
+}
+
+.botao,
+.botao a {
+    background-color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    color: black;
+}
+
+/* CONTAINERS */
+.container,
+.card,
+#form,
+.form {
     background-color: #0d6efd;
     padding: 40px;
     border-radius: 10px;
@@ -16,21 +44,49 @@ body {
     text-align: center;
 }
 
+/* TITULOS */
 h2 {
     color: white;
+    margin-bottom: 15px;
 }
 
-input {
+/* TEXTOS */
+p {
+    color: white;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+/* INPUTS */
+input,
+select {
     width: 100%;
     padding: 10px;
-    margin: 8px 0;
+    margin: 5px 0 15px 0;
     border: none;
     border-radius: 5px;
 }
 
-button {
-    width: 100%;
+/* LABELS */
+label {
+    display: block;
+    text-align: left;
+    color: white;
+    margin-top: 10px;
+}
+
+/* INPUT GROUP */
+.input-group {
+    text-align: left;
+}
+
+/* BOTÃO CENTRALIZADO (FIXADO) */
+button,
+#botao {
+    width: 150px;
     padding: 10px;
+    margin: 15px auto 0 auto;
+    display: block;
     background-color: white;
     border: none;
     border-radius: 5px;
@@ -38,6 +94,38 @@ button {
     cursor: pointer;
 }
 
+/* CONTAINER DE BOTÕES (SEM QUEBRAR CENTRALIZAÇÃO) */
+.botoes {
+    display: flex;
+    justify-content: center; /* centraliza */
+    margin-top: 15px;
+    gap: 10px;
+}
+
+.botoes button {
+    width: 150px;
+    flex: none; /* IMPORTANTE: impede de esticar */
+}
+
+/* LINKS */
+a {
+    display: block;
+    margin-top: 15px;
+    color: white;
+    text-decoration: none;
+}
+
+.footer-link {
+    margin-top: 15px;
+    font-size: 14px;
+    color: white;
+}
+
+.footer-link a {
+    text-decoration: underline;
+}
+
+/* FEEDBACK */
 .erro {
     color: #ffcccc;
     font-size: 14px;
@@ -48,9 +136,17 @@ button {
     font-size: 14px;
 }
 
-a {
+#feedback {
     display: block;
-    margin-top: 15px;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* FOOTER */
+footer {
+    position: absolute;
+    bottom: 10px;
+    text-align: center;
     color: white;
-    text-decoration: none;
+    font-size: 12px;
 }

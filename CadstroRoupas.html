@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Publicar Roupa</title>
+
+        <style>
+            body {
+                margin: 0;
+                font-family: Arial;
+                background-color: #7fa6d6;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+            }
+
+            header {
+                position: absolute;
+                top: 20px;
+            }
+
+            nav {
+                display: flex;
+                gap: 10px;
+            }
+
+            .botao {
+                background-color: white;
+                padding: 8px 12px;
+                border-radius: 5px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+            #form {
+                background-color: #0d6efd;
+                padding: 40px;
+                border-radius: 10px;
+                width: 320px;
+                text-align: center;
+            }
+
+            fieldset {
+                border: none;
+                color: white;
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+
+            label {
+                display: block;
+                text-align: left;
+                color: white;
+                margin-top: 10px;
+            }
+
+            input, select {
+                width: 100%;
+                padding: 10px;
+                margin: 5px 0;
+                border: none;
+                border-radius: 5px;
+            }
+
+            .botoes {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 15px;
+                gap: 10px;
+            }
+
+            .botoes button {
+                flex: 1;
+                padding: 10px;
+                background-color: white;
+                border: none;
+                border-radius: 5px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+            footer {
+                position: absolute;
+                bottom: 10px;
+                text-align: center;
+                color: white;
+                font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+        </header>
+        <main>
+            <section id="form"> 
+                <form id="cadastra">
+                    <fieldset>Publique sua roupa aqui: </fieldset>
+
+                    <label for="tipo_roupa">Digite o tipo da roupa: </label>
+                    <input type="text" name="tipo">
+
+                    <label for="tamanho_roupa">Digite o tamanho da roupa: </label>
+                    <input type="text" name="tamanho">
+
+                    <label for="sexo">Digite o sexo da roupa: </label>
+                    <select id="Sexo" name="sexo">
+                        <option value="Masculino">Masculino</option>
+                        <option value="Feminino">Feminino</option>
+                        <option value="Unissex">Unissex</option> 
+                    </select>  
+
+                    <label for="Estado">Digite o Estado da roupa: </label>
+                    <select id="Estado" name="Estado">
+                        <option value="Novo">Novo</option>
+                        <option value="Semi-Novo">Semi-Novo</option>
+                        <option value="Usado - Bom Estado">Usado</option> 
+                    </select>  
+
+                    <!-- BOTÕES -->
+                    <div class="botoes">
+                        <button type="button" onclick="window.history.back()">Voltar</button>
+                        <button type="submit">Cadastrar Roupa</button>
+                    </div>
+
+                </form>
+            </section>
+        </main>
+        <script>
+            document.getElementById("cadastra").addEventListener("submit", function(e){
+            e.preventDefault();
+            const formData = new FormData(this);
+            const feedback = document.getElementById("feedback")
+
+            fetch("../php/cadastro_roupa.php",{
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data =>{
+                    feedback.textContent = data.mensage;
+                    feedback.style.color = data.success ? "green" : "red"; 
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    feedback.textContent = "Erro interno no servidor.";
+                });
+                })
+        </script>
+    </body>
+</html>
