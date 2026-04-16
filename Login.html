@@ -1,170 +1,86 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>Autenticação</title>
-        <link rel="stylesheet" href="css/style.css">
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial; }
+        body { background: #e6e6e6; }
+        .header { height: 60px; background: #1f6f9f; display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; gap: 10px; }
+        .header a { text-decoration: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; }
+        .login { background: #ffffff; color: #1f6f9f; }
+        .cadastro { background: #0d4f73; color: white; }
+        .main { display: flex; justify-content: center; align-items: center; height: calc(100vh - 60px); background: #b7c7d9; }
+        .box { width: 320px; background: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .box h2 { margin-bottom: 15px; color: #1f6f9f; }
+        .box label { display: block; text-align: left; margin-top: 10px; font-weight: bold; color: #333; }
+        .box input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: none; background: #eef2f6; }
+        #botao { width: 100%; margin-top: 15px; padding: 10px; background: #1f6f9f; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        #botao:hover { background: #0d4f73; }
+        #feedback { display: block; margin-top: 10px; font-size: 14px; min-height: 20px; }
+        .link { margin-top: 15px; display: block; text-decoration: none; color: #1f6f9f; font-weight: bold; }
+    </style>
+</head>
+<body>
 
-        <style>
-            body {
-                margin: 0;
-                font-family: Arial;
-                background-color: #7fa6d6;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                height: 100vh;
-            }
+<div class="header">
+    <a href="index.html" class="login">Voltar</a>
+    <a href="CadastroUsuarios.php" class="cadastro">Cadastrar</a>
+</div>
 
-            header {
-                position: absolute;
-                top: 20px;
-            }
+<div class="main">
+    <div class="box">
+        <form id="autentica">
+            <h2>Login</h2>
 
-            nav {
-                display: flex;
-                gap: 10px;
-            }
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
 
-            .botao a {
-                background-color: white;
-                padding: 8px 12px;
-                border-radius: 5px;
-                text-decoration: none;
-                color: black;
-                font-weight: bold;
-            }
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" name="senha" required>
 
-            .form {
-                background-color: #0d6efd;
-                padding: 40px;
-                border-radius: 10px;
-                width: 320px;
-                text-align: center;
-            }
+            <span id="feedback"></span>
 
-            h2 {
-            color: white;
-            }
+            <button type="submit" id="botao">Acessar</button>
+        </form>
 
-            label {
-                display: block;
-                text-align: left;
-                color: white;
-                margin-top: 10px;
-            }
+        <a href="CadastroUsuarios.php" class="link">Criar conta</a>
+        <a href="esqueci_senha.php" class="link" style="font-size: 12px;">Esqueci minha senha</a>
+    </div>
+</div>
 
-            input {
-                width: 100%;
-                padding: 10px;
-                margin: 5px 0;
-                border: none;
-                border-radius: 5px;
-            }
+<script>
+const feedback = document.getElementById("feedback");
+const email = document.getElementById("email");
+const senha = document.getElementById("senha");
+const botao = document.getElementById("botao");
 
-            #botao {
-                width: 150px;
-                padding: 10px;
-                margin: 15px auto 0 auto;
-                display: block;
-                background-color: white;
-                border: none;
-                border-radius: 5px;
-                font-weight: bold;
-                cursor: pointer;
-            }
+document.getElementById("autentica").addEventListener("submit", function(e){
+    e.preventDefault();
 
-            #feedback {
-                display: block;
-                margin-top: 10px;
-                font-size: 14px;
-            }
+    const formData = new FormData(this);
 
-            footer {
-                position: absolute;
-                bottom: 10px;
-                text-align: center;
-                color: white;
-                font-size: 12px;
-            }
-        </style>
-    </head>
-    <body>
-        <main>
-            <section class="form"> 
-                
-                <form id="autentica">
-                    <h2>Login</h2>
-                    <label for="email">Email: </label>
-                    <input type="email" name="email" id="email" >
-                    <label for="senha">Senha: </label>
-                    <input type="password" name="senha" id="senha">
-                    
-                    <span id="feedback"></span>
+    fetch("php/autenticacao.php", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        feedback.textContent = data.mensagem;
+        feedback.style.color = data.success ? "green" : "red";
 
-                    <button type="submit" id="botao">Acessar</button>
-                    
-                </form>
-
-                <a href="CadastroUsuarios.php">Crie sua conta</a>
-            
-            </section>
-        </main>
-
-        <script>
-            const feedback = document.getElementById("feedback");
-            const email = document.getElementById("email");
-            const senha = document.getElementById("senha");
-            const botao = document.getElementById("botao");
-            
-            document.addEventListener( 'input', () => {
-                const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                const regexSenha = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#]).{8,}$/;
-
-                const emailOK = regexEmail.test(email.value);
-                const senhaForte = regexSenha.test(senha.value);
-
-                if (!emailOK) {
-                    botao.style.display = "none";
-                    feedback.textContent = "padrão de email invalido!";
-                    feedback.style.color =  "red";
-                } else {
-                    if(senhaForte){
-                        botao.style.display = "block";
-                        feedback.style.display = "none";
-                    } else {
-                        botao.style.display = "block";
-                        feedback.style.display = "none";
-                        feedback.textContent = "usuario ou senha incorretos";
-                    }
-                    
-                }
-            })
-            document.getElementById("autentica").addEventListener("submit", function(e){
-                e.preventDefault();
-
-                const feedback = document.getElementById("feedback");
-                const formData = new FormData(this);
-                fetch("../php/autentica.php",{
-                    body: formData
-                }).then(response => response.json())
-                .then(data =>{
-                    feedback.textContent = data.mensage;
-                    feedback.style.color = data.success ? "green" : "red"; 
-                
-                    if (data.success) {
-                        setTimeout(() => {
-                            window.location.href = "../index.html";
-                        }, 2000);
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    feedback.textContent = "Erro interno no servidor.";
-                });
-            })
-        </script>
-
-    </body>
+        if (data.success) {
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        feedback.textContent = "Erro na comunicação com o servidor.";
+        feedback.style.color = "red";
+    });
+});
+</script>
+</body>
 </html>
