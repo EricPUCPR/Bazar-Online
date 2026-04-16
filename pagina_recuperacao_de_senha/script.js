@@ -27,38 +27,35 @@ function togglePassword(id, icon) {
 password.addEventListener("input", () => {
     const value = password.value;
     
-    // 1. Validações
+    
     const isLongEnough = value.length >= 8;
     const hasSeq = value.includes("123");
     const hasCase = /[a-z]/.test(value) && /[A-Z]/.test(value);
     const hasEspecial = /[^A-Za-z0-9]/.test(value);
 
-    // 2. Atualiza as cores dos requisitos (aquela lista que fica embaixo)
+    
     toggleClass(reqLength, isLongEnough);
     toggleClass(reqSeq, !hasSeq);
     toggleClass(reqCase, hasCase);
     toggleClass(reqEspecial, hasEspecial);
 
-    // 3. Lógica do SPAN de erro
-    // Se o campo estiver vazio, não mostra erro nenhum
     if (value.length === 0) {
         erroRegex.style.display = "none";
         return; 
     }
 
-    // Só mostra o span se: 
-    // Tiver a sequência "123" OU (se já terminou de digitar algo e ainda falta tamanho ou letras)
+    
     if (hasSeq || (value.length > 0 && (!isLongEnough || !hasCase))) {
         erroRegex.style.display = "block";
         
-        // Ajuste de texto para você saber o que está disparando o erro
+    
         if (hasSeq) {
             erroRegex.textContent = "A sequência '123' não é permitida.";
         } else {
             erroRegex.textContent = "Senha muito curta ou sem letras maiúsculas/minúsculas.";
         }
     } else {
-        // Se tudo estiver certo, esconde
+        
         erroRegex.style.display = "none";
     }
 
