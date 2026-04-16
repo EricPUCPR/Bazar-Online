@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Cadastro</title>
+        <link rel="stylesheet" href="../css/arq.css">
+    </head>
+    <body>
+        <header>
+            <nav>
+                <div class="botao"><a href="autenticacao.html">Acessar conta</a></div>
+                <div class="botao"><a href="../index.html">Voltar</a></div>
+            </nav>
+        </header>
+        <main>
+            <section class="form"> 
+                <form id="cadastra">
+                    <fieldset>Crie sua conta aqui: </fieldset>
+
+                    <label for="nome">Nome completo: </label>
+                    <input type="text" name="nome">
+                    
+                    <label for="email">Email: </label>
+                    <input type="email" name="email">
+                    <span id="erro-email" style="color: red; display: none;">Formato de e-mail inválido!</span>
+
+                    <label for="nascimento">Data de Nascimento: </label>
+                    <input type="text" name="nascimento">
+                    
+                    <label for="telefone">Telefone: </label>
+                    <input type="text" name="telefone">
+
+                    <label for="cep">CEP: </label>
+                    <input type="text" name="cep"> 
+
+                    <label for="senha1">Escolha uma Senha: </label>
+                    <input type="password" name="senha1" id="senha1">
+                    <label for="senha2" id="label2">confirme sua senha: </label>
+                    <input type="password" name="senha2" id="senha2">
+
+                    <div id="orientacao">
+                        <h4>Sua senha deve conter:</h4>
+                        <p >
+                            Minimo de 8 caractéres; <br>
+                            Letras maiusculas;<br>
+                            Números;<br>
+                            Caracteres especiais;
+                        </p>
+                    </div>
+                    
+                    <div id="Termos" style="margin-top: 15px; display: flex; align-items: center;">
+                        <input type="checkbox" id="aceito" name="aceito" style="width: auto; margin-right: 8px;">
+                        <label for="aceito" style="margin: 0;">Li e aceito os <a href="#" id="AbrirTermos" style="color: blue; text-decoration: underline;">Termos de Uso</a>.</label>
+                    </div>
+
+                    <span id="feedback"></span>
+
+                    <button type="submit" id="enviar">Enviar</button>
+                    
+                </form>
+            
+            </section>
+        </main>
+        <footer>
+            <p>Agradecemos por optar pelo nosso site!!<br>^.^</p>
+        </footer>
+
+        <script>
+            // cria onde vamos retornar o erro ou sucesso
+            const feedback = document.getElementById("feedback");
+            const senha1 = document.getElementById("senha1");
+            const senha2 = document.getElementById("senha2");
+            const label2 = document.getElementById("label2");
+            const orientacao = document.getElementById("orientacao");
+            const botao = document.getElementById("enviar");
+            const checkboxAceito = document.getElementById("aceito");
+            const erroEmail = document.getElementById("erro-email");
+
+            const inputNome = document.querySelector('input[name="nome"]');
+            const inputEmail = document.querySelector('input[name="email"]');
+            const inputNascimento = document.querySelector('input[name="nascimento"]');
+            const inputTelefone = document.querySelector('input[name="telefone"]');
+            const inputCep = document.querySelector('input[name="cep"]');
+
+            senha2.style.display = "none";
+            label2.style.display = "none";
+            botao.style.display = "none";
+
+            function verificarBotao() {
+                const regexNome = /^[a-zA-ZÀ-ÿ\s]+$/;
+                const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const regexNascimento = /^\d{2}[-/]?\d{2}[-/]?\d{4}$/;
+                const regexTelefone = /^(\+?\d{2,3}\s?|\(\d{2,3}\)\s?)?(\(\d{2}\)\s?|\d{2}\s?)?9\s?\d{4}-?\d{4}$/;
+                const regexCep = /^\d{2}\.?\d{3}-?\d{3}$/;
+                const regexSenha = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#]).{8,}$/;
+
+                const nomeOK = regexNome.test(inputNome.value);
+                const emailOK = regexEmail.test(inputEmail.value);
+                const nascimentoOK = regexNascimento.test(inputNascimento.value);
+                const telefoneOK = regexTelefone.test(inputTelefone.value);
+                const cepOK = regexCep.test(inputCep.value);
+                const senhaForte = regexSenha.test(senha1.value);
+                const senhasIguais = (senha1.value === senha2.value && senha2.value !== "");
+                const termosAceitos = checkboxAceito.checked;
+
+                if (nomeOK && emailOK && nascimentoOK && telefoneOK && cepOK && senhaForte && senhasIguais && termosAceitos) {
+                    botao.style.display = "flex";
+                } else {
+                    botao.style.display = "none";
+                }
+            }
+
+            inputNome.addEventListener('input', () => {
+                const regexNome = /^[a-zA-ZÀ-ÿ\s]+$/;
+                inputNome.style.border = regexNome.test(inputNome.value) ? 'solid 3px green' : 'solid 3px red';
+                verificarBotao();
+            });
+
+            inputEmail.addEventListener('input', () => {
+                const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (regexEmail.test(inputEmail.value)) {
+                    inputEmail.style.border = 'solid 3px green';
+                    erroEmail.style.display = 'none';
+                } else {
+                    inputEmail.style.border = 'solid 3px red';
+                    if (inputEmail.value !== "") erroEmail.style.display = 'block';
+                }
+                verificarBotao();
+            });
+
+            inputNascimento.addEventListener('input', () => {
+                const regexNascimento = /^\d{2}[-/]?\d{2}[-/]?\d{4}$/;
+                inputNascimento.style.border = regexNascimento.test(inputNascimento.value) ? 'solid 3px green' : 'solid 3px red';
+                verificarBotao();
+            });
+
+            inputTelefone.addEventListener('input', () => {
+                const regexTelefone = /^(\(\d{2}\)\s?|\d{2}\s)?9\d{4}-?\d{4}$/;
+                inputTelefone.style.border = regexTelefone.test(inputTelefone.value) ? 'solid 3px green' : 'solid 3px red';
+                verificarBotao();
+            });
+
+            inputCep.addEventListener('input', () => {
+                const regexCep = /^\d{2}\.?\d{3}-?\d{3}$/;
+                inputCep.style.border = regexCep.test(inputCep.value) ? 'solid 3px green' : 'solid 3px red';
+                verificarBotao();
+            });
+
+            // garante que a senha seja forte
+            senha1.addEventListener('input', () => {
+                const regexSem123 = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#]).{8,}$/;
+                // (?=.*[A-Z]) -> Garante no minimo 
+                // (?=.*\d) -> Garante no minimo 
+                // (?=.*[@$!%*?&#]) -> Garante no minimo um desses caracteres especiais
+                // .{8,} -> garante minimo de 8 caracteres
+
+                // se a senha for fraca informa usuario e oculta itens
+                if (!regexSem123.test(senha1.value)) {
+                    senha1.style.border = 'solid 3px red';
+                    feedback.textContent = "Sua senha é Beta"
+                    feedback.style.color = 'red';
+
+                    orientacao.style.display = "flex";
+                    senha2.style.display = "none";
+                    label2.style.display = "none";
+                    botao.style.display = "none";
+                } else { // se a senha for forte
+                    senha1.style.border = 'solid 3px green';
+                    feedback.textContent = ""
+
+                    orientacao.style.display = "none";
+                    senha2.style.display = "flex";
+                    label2.style.display = "flex";
+                    verificarBotao();
+                }
+            });
+            
+            // compara se as senhas sao iguais
+            senha2.addEventListener('input', () =>{                
+                if(senha1.value !== senha2.value || senha2.value === ""){
+                    feedback.textContent = "As senhas não conhecidem";
+                    senha2.style.border = 'solid 3px red';
+                } else {
+                    feedback.textContent = "";
+                    senha2.style.border = 'solid 3px green';
+                }
+                verificarBotao();
+            });
+
+            checkboxAceito.addEventListener('change', () => {
+                verificarBotao();
+            });
+            
+
+            document.getElementById("cadastra").addEventListener("submit", function(e){
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+
+                // declara pagina php destilo, metodo de transmissão e q
+                fetch("../php/cadastro_usuario.php",{
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data =>{ // toma ação com base nos dados retornados
+                    // retorna feedback conforme aceito ou recusa pelo back
+                    feedback.textContent = data.mensage;
+                    // feedback positivo retorna em verde e negativo em vermelho
+                    feedback.style.color = data.success ? "green" : "red"; 
+
+                    // Se deu certo, espera 2 segundos e leva a a pagina principal
+                    if (data.success) {
+                        setTimeout(() => {
+                            window.location.href = "../index.html";
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    feedback.textContent = "Erro interno no servidor.";
+                });
+            });
+        </script>
+
+        <style>
+            #TextoTermos h3, 
+            #TextoTermos p {
+                color: black !important;
+            }
+        </style>
+
+        <div id="Fundo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999;"></div>
+
+        <div id="TextoTermos" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 600px; max-height: 80vh; overflow-y: auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1000; text-align: justify; color: black;">
+            
+            <span id="Fechar" style="float: right; cursor: pointer; font-weight: bold; font-size: 20px;">&times;</span>
+            
+            <h3>Termos de Uso e Política de Privacidade</h3>
+            
+            <p> Estes termos de uso e política de privacidade segue de acordo com que a Lei 13.709, de 14 de agosto de 2018, vulgo Lei Geral de Proteção de Dados (LGPD) estabeleceu em território nacional.</p>
+            <p> O Bazar Online ficará responsável pelos dados cadastrados pelo usuário(a): garantir privacidade aos dados sensíveis e de transmitir transparência sobre tudo que acontece com os dados informados.</p>
+            <p> Ao aceitar este termo, você concorda em ter mais de 18 anos de idade e que seus dados serão usados para o funcionamento do sistema que acessará e será responsável em selecionar um meio de comunicação para comunicar com o remetente.</p>
+            <p> O Bazar Online não terá responsabilidade legal por alguma infração cometida em outro meio de comunicação.</p>
+            <p> Além disso, qualquer mídia submetida para doação poderá ser utilizada para publicidade do serviço e estará em exposição em forma de pesquisa, ou, possivelmente nos destaques do Bazar (ambos pertencem ao catálogo).</p>
+            <p> O usuário terá permissão para alterar ou excluir seus próprios dados, além de poder desativar a conta por período determinado ou indeterminado, estas opções estarão presentes na aba "conta".</p>
+            <p> Os dados da conta constituem de: Nome Completo, foto de perfil, roupas cadastradas (dados das roupas: tipo de roupa, foto, tamanho e sexo).</p>
+            <p> Os dados sensíveis constituem de: email, telefone, data de nascimento, senha e endereço, com o telefone ou endereço permitidos após o consentimento do usuário (o endereço combinado entre dois usuários não faz parte do Bazar Online, isso será discutido pelo meio de comunicação escolhido, porém uma estimativa estará disponível para ter compreensão dos lugares que poderá ir para doação caso seja pessoalmente ou para que o usuário obtenha noção de quais roupas ele provavelmente pode chegar em um acordo. A estimativa pode incluir estado, região metropolitana, município e/ou bairro).</p>
+        </div>
+
+        <script>
+            const Abrir = document.getElementById('AbrirTermos');
+            const Fechar = document.getElementById('Fechar');
+            const TextoTermos = document.getElementById('TextoTermos');
+            const Fundo = document.getElementById('Fundo');
+
+            // Alterna entre mostrar e esconder o texto
+            Abrir.addEventListener('click', function(event) {
+                event.preventDefault(); // Evita que a página pule para o topo
+                TextoTermos.style.display = 'block';
+                Fundo.style.display = 'block';
+            });
+
+            Fechar.addEventListener('click', function() {
+                TextoTermos.style.display = 'none';
+                Fundo.style.display = 'none';
+            });
+
+            Fundo.addEventListener('click', function() {
+                TextoTermos.style.display = 'none';
+                Fundo.style.display = 'none';
+            });
+        </script>
+    </body>
+</html>
