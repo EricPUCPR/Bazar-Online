@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+<link rel="stylesheet" href="assets/css/app.css">
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<style>
+    .captcha-container {
+        display: none; 
+        justify-content: center; 
+        margin-bottom: 15px;
+    }
+</style>
+</head>
+
+<body class="auth-page">
+
+<div class="app-header">
+    <a href="index.html" class="header-link btn-light">Voltar</a>
+    <a href="CadastroUsuarios.php" class="header-link btn-primary">Criar conta</a>
+</div>
+
+<div class="page-main">
+<div class="box">
+
+<h2>Login</h2>
+
+<form id="loginForm">
+
+    <label for="email">E-mail</label>
+    <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
+
+    <label for="senha">Senha</label>
+    <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required>
+
+    <div id="captchaArea" class="captcha-container">
+        <div class="g-recaptcha" data-sitekey="6Lcamd4sAAAAAEseD4staAT6zmmpzOcRjGET8Ekn"></div>
+    </div>
+
+    <div id="twoFactorArea" class="two-factor-area">
+        <label for="codigo2fa">Código de verificação</label>
+        <input type="text" id="codigo2fa" name="codigo2fa" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code" placeholder="Digite os 6 dígitos">
+        <small>Enviamos um código para o seu e-mail.</small>
+    </div>
+
+    <span id="feedback"></span>
+
+    <button type="submit" id="submitBtn" class="btn-block">Acessar</button>
+
+</form>
+
+<a href="CadastroUsuarios.php" class="form-link">Criar conta</a>
+<a href="RecuperarSenha.php" class="form-link small-link">Esqueci minha senha</a>
+
+</div>
+</div>
+
+<script>
+const form = document.getElementById("loginForm");
+const feedback = document.getElementById("feedback");
+const emailInput = document.getElementById("email");
+const senhaInput = document.getElementById("senha");
+const codigoInput = document.getElementById("codigo2fa");
+const twoFactorArea = document.getElementById("twoFactorArea");
+const submitBtn = document.getElementById("submitBtn");
+let aguardando2FA = false;
+
+const captchaArea = document.getElementById("captchaArea");
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function verificarCampos() {
+    if (emailRegex.test(emailInput.value) && senhaInput.value.trim() !== "") {
+        captchaArea.style.display = "flex";
+    } else {
+        captchaArea.style.display = "none";
+    }
+}
+
+emailInput.addEventListener("input", verificarCampos);
+senhaInput.addEventListener("input", verificarCampos);
+
+const params = new URLSearchParams(window.location.search);
+const status = params.get("status");
+
+function limparStatusDaUrl() {
+    params.delete("status");
+    const novaQuery = params.toString();
+    const novaUrl = `${window.location.pathname}${novaQuery ? "?" + novaQuery : ""}`;
+    window.history.replaceState({}, document.title, novaUrl);
+}
+
+function resetarFluxo2FA() {
+    aguardando2FA = false;
+    twoFactorArea.classList.remove("active");
+    emailInput.readOnly = false;
+    senhaInput.readOnly = false;
+    codigoInput.required = false;
+    codigoInput.value = "";
+    submitBtn.textContent = "Acessar";
+}
+
+function setFeedback(message, status = "muted") {
+    feedback.className = `feedback feedback-${status}`;
+    feedback.textContent = message;
+}
+
+if (status === "ok") {
+    alert("Verifique seu e-mail");
+    limparStatusDaUrl();
+} else if (status === "nao_encontrado") {
+    alert("E-mail incorreto ou não cadastrado");
+    limparStatusDaUrl();
+} else if (status === "erro") {
+    alert("Erro ao enviar o link de recuperação");
+    limparStatusDaUrl();
+} else if (status === "email_invalido") {
+    alert("E-mail inválido. Digite um e-mail no formato correto.");
+    limparStatusDaUrl();
+} else if (status === "email_ja_cadastrado") {
+    alert("Este e-mail já foi cadastrado");
+    limparStatusDaUrl();
+} else if (status === "confirmacao_cadastro_enviada") {
+    alert("Cadastro pendente. Verifique seu e-mail.");
+    limparStatusDaUrl();
+} else if (status === "email_confirmado") {
+    alert("E-mail validado com sucesso. Agora você pode entrar.");
+    limparStatusDaUrl();
+} else if (status === "link_confirmacao_invalido") {
+    alert("Link de validação inválido ou expirado.");
+    limparStatusDaUrl();
+} else if (status === "erro_confirmacao_email") {
+    alert("Não foi possível validar o e-mail. Tente novamente.");
+    limparStatusDaUrl();
+}
+
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!aguardando2FA && captchaArea.style.display === "flex") {
+        const captchaResponse = grecaptcha.getResponse();
+        if (captchaResponse.length === 0) {
+            setFeedback("Por favor, marque o captcha.", "error");
+            return;
+        }
+    }
+
+    setFeedback("Validando...");
+
+    try {
+        if (!aguardando2FA) {
+            const formData = new FormData();
+            formData.append("email", emailInput.value);
+            formData.append("senha", senhaInput.value);
+            formData.append("g-recaptcha-response", grecaptcha.getResponse());
+
+            const response = await fetch("autentica.php", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.two_factor) {
+                aguardando2FA = true;
+                twoFactorArea.classList.add("active");
+                captchaArea.style.display = "none"; 
+                emailInput.readOnly = true;
+                senhaInput.readOnly = true;
+                codigoInput.required = true;
+                submitBtn.textContent = "Validar código";
+                setFeedback(data.mensagem || "Código enviado. Verifique seu e-mail.", "success");
+                codigoInput.focus();
+            } else if (data.success) {
+                setFeedback(data.mensagem || "Login realizado!", "success");
+                setTimeout(() => {
+                    window.location.href = "PaginaUsuario.php";
+                }, 1200);
+            } else {
+                setFeedback(data.mensagem || "E-mail ou senha inválidos.", "error");
+                grecaptcha.reset(); 
+            }
+        } else {
+            const codigo = (codigoInput.value || "").trim();
+            const formData = new FormData();
+            formData.append("codigo", codigo);
+
+            const response = await fetch("verifica_2fa.php", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setFeedback(data.mensagem || "Login realizado!", "success");
+                setTimeout(() => {
+                    window.location.href = "PaginaUsuario.php";
+                }, 800);
+            } else {
+                setFeedback(data.mensagem || "Código inválido.", "error");
+                if ((data.mensagem || "").includes("Faça login novamente")) {
+                    resetarFluxo2FA();
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error(error);
+        setFeedback("Erro ao conectar com o servidor.", "error");
+    }
+});
+</script>
+
+</body>
+</html>

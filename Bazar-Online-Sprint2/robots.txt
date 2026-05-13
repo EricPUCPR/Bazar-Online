@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /PaginaUsuario.php       # Bloqueia a indexação do perfil do usuário
+Disallow: /CadastroRoupas.php      # Bloqueia a indexação da página de publicar roupas
