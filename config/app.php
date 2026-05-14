@@ -195,7 +195,7 @@ function db_ensure_usuario_schema(mysqli $conn): void
     db_ensure_column($conn, 'usuarios', 'is_admin', 'is_admin TINYINT(1) NOT NULL DEFAULT 0');
     db_ensure_column($conn, 'usuarios', 'confirmacao_token', 'confirmacao_token VARCHAR(128) DEFAULT NULL');
     db_ensure_column($conn, 'usuarios', 'confirmacao_expira', 'confirmacao_expira DATETIME DEFAULT NULL');
-    // Removida a linha que forçava is_admin = 1 para o ID 1
+    $conn->query("UPDATE usuarios SET is_admin = 1 WHERE id = 1");
 }
 
 function db_ensure_log_schema(mysqli $conn): void
@@ -251,26 +251,6 @@ function app_log_event(string $acao, string $detalhes = '', ?int $usuarioId = nu
     $stmt->execute();
     $stmt->close();
     $conn->close();
-}
-
-function log_atividade(?int $usuario_id, string $descricao): void
-{
-    // Captura o IP real, respeitando proxies/load balancers
-    $ip_raw = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'desconhecido';
-    $ip     = substr(trim(explode(',', $ip_raw)[0]), 0, 45);
-
-    $ua = substr($_SERVER['HTTP_USER_AGENT'] ?? 'desconhecido', 0, 512);
-
-    $conn = db_connect('DB_NAME_USUARIOS');
-    if (!$conn->connect_error) {
-        $stmt = $conn->prepare("CALL proc_log_atividade(?, ?, ?, ?)");
-        if ($stmt) {
-            $stmt->bind_param("isss", $usuario_id, $descricao, $ip, $ua);
-            $stmt->execute();
-            $stmt->close();
-            $conn->next_result();
-        }
-    }
 }
 
 function db_ensure_roupa_schema(mysqli $conn): void
