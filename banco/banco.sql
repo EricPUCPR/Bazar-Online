@@ -13,7 +13,8 @@ CREATE TABLE `usuarios` (
     `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
     `recuperacao_token` varchar(255) DEFAULT NULL,
     `recuperacao_expira` datetime DEFAULT NULL,
-    `email_verificado` tinyint(1) NOT NULL DEFAULT 0
+    `email_verificado` tinyint(1) NOT NULL DEFAULT 0,
+    `is_admin` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE `activity_log` (
