@@ -195,7 +195,7 @@ function db_ensure_usuario_schema(mysqli $conn): void
     db_ensure_column($conn, 'usuarios', 'is_admin', 'is_admin TINYINT(1) NOT NULL DEFAULT 0');
     db_ensure_column($conn, 'usuarios', 'confirmacao_token', 'confirmacao_token VARCHAR(128) DEFAULT NULL');
     db_ensure_column($conn, 'usuarios', 'confirmacao_expira', 'confirmacao_expira DATETIME DEFAULT NULL');
-    $conn->query("UPDATE usuarios SET is_admin = 1 WHERE id = 1");
+    // Removida a linha que forçava is_admin = 1 para o ID 1
 }
 
 function db_ensure_log_schema(mysqli $conn): void
