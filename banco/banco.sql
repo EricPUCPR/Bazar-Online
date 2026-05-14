@@ -60,8 +60,8 @@ BEGIN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Este e-mail já está cadastrado no sistema.';
     ELSE
-        INSERT INTO usuarios (nome, email, telefone, endereco, data_nascimento, senha, email_verificado, criado_em)
-        VALUES (p_nome, p_email, p_telefone, p_endereco, p_nascimento, p_senha, 1, NOW());
+        INSERT INTO usuarios (nome, email, telefone, endereco, data_nascimento, senha, email_verificado, is_admin, criado_em)
+        VALUES (p_nome, p_email, p_telefone, p_endereco, p_nascimento, p_senha, 1, 0, NOW());
         SELECT LAST_INSERT_ID() AS id, 'Sucesso' AS resultado;
     END IF;
 END $$
@@ -72,7 +72,7 @@ CREATE PROCEDURE proc_usuario_logar(
 )
 SQL SECURITY DEFINER
 BEGIN
-    SELECT id, nome, email, senha, email_verificado FROM usuarios WHERE email = p_email LIMIT 1;
+    SELECT id, nome, email, senha, email_verificado, is_admin FROM usuarios WHERE email = p_email LIMIT 1;
 END $$
 
 -- Retorna dados do perfil do usuário (chamada: PaginaUsuario.php)
@@ -199,3 +199,6 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+GRANT ALL PRIVILEGES ON bazar.* TO 'bazar'@'localhost';
+FLUSH PRIVILEGES;
