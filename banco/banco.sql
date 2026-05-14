@@ -3,29 +3,20 @@ CREATE DATABASE IF NOT EXISTS bazar DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb
 USE bazar;
 
 CREATE TABLE `usuarios` (
-    `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `nome` varchar(100) NOT NULL,
-    `email` varchar(150) NOT NULL UNIQUE,
-    `telefone` varchar(20) NOT NULL,
-    `endereco` varchar(200) NOT NULL,
-    `data_nascimento` date NOT NULL,
-    `senha` varchar(255) NOT NULL,
-    `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
-    `recuperacao_token` varchar(255) DEFAULT NULL,
-    `recuperacao_expira` datetime DEFAULT NULL,
-    `email_verificado` tinyint(1) NOT NULL DEFAULT 0,
-    `is_admin` tinyint(1) NOT NULL DEFAULT 0
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
-CREATE TABLE `activity_log` (
-    `id_log` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `id_usuario` int(11) DEFAULT NULL,
-    `descricao` varchar(255) NOT NULL,
-    `ip_address` varchar(45) DEFAULT NULL,
-    `user_agent` varchar(512) DEFAULT NULL,
-    `data_hora` timestamp NOT NULL DEFAULT current_timestamp(),
-    FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+  `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nome` varchar(100) NOT NULL,
+  `email` varchar(150) NOT NULL UNIQUE,
+  `telefone` varchar(20) DEFAULT NULL,
+  `endereco` varchar(200) DEFAULT NULL,
+  `data_nascimento` date DEFAULT NULL,
+  `senha` varchar(255) NOT NULL,
+  `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
+  `recuperacao_token` varchar(255) DEFAULT NULL,
+  `recuperacao_expira` datetime DEFAULT NULL,
+  `email_verificado` tinyint(1) NOT NULL DEFAULT 0,
+  `confirmacao_token` varchar(128) DEFAULT NULL,
+  `confirmacao_expira` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `roupas` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -44,15 +35,16 @@ DELIMITER $$
 -- PROCEDURES DE USUÁRIO
 -- ============================================================
 
--- Cria um novo usuário já verificado (chamada: verificar_cadastro.php)
--- O e-mail foi validado pelo código antes da inserção, portanto email_verificado=1.
+-- Cria um novo usuário (chamada: CadastroUsuarios.php)
 CREATE PROCEDURE proc_usuario_criar(
     IN p_nome VARCHAR(100),
     IN p_email VARCHAR(150),
     IN p_telefone VARCHAR(20),
     IN p_endereco VARCHAR(200),
     IN p_nascimento DATE,
-    IN p_senha VARCHAR(255)
+    IN p_senha VARCHAR(255),
+    IN p_confirmacao_token VARCHAR(128),
+    IN p_confirmacao_expira DATETIME
 )
 SQL SECURITY DEFINER
 BEGIN
@@ -60,8 +52,8 @@ BEGIN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Este e-mail já está cadastrado no sistema.';
     ELSE
-        INSERT INTO usuarios (nome, email, telefone, endereco, data_nascimento, senha, email_verificado, is_admin, criado_em)
-        VALUES (p_nome, p_email, p_telefone, p_endereco, p_nascimento, p_senha, 1, 0, NOW());
+        INSERT INTO usuarios (nome, email, telefone, endereco, data_nascimento, senha, email_verificado, confirmacao_token, confirmacao_expira, criado_em)
+        VALUES (p_nome, p_email, p_telefone, p_endereco, p_nascimento, p_senha, 0, p_confirmacao_token, p_confirmacao_expira, NOW());
         SELECT LAST_INSERT_ID() AS id, 'Sucesso' AS resultado;
     END IF;
 END $$
@@ -72,7 +64,7 @@ CREATE PROCEDURE proc_usuario_logar(
 )
 SQL SECURITY DEFINER
 BEGIN
-    SELECT id, nome, email, senha, email_verificado, is_admin FROM usuarios WHERE email = p_email LIMIT 1;
+    SELECT id, nome, email, senha, email_verificado FROM usuarios WHERE email = p_email LIMIT 1;
 END $$
 
 -- Retorna dados do perfil do usuário (chamada: PaginaUsuario.php)
@@ -94,13 +86,61 @@ BEGIN
     SELECT 'Sucesso' AS resultado;
 END $$
 
--- Checa se email já existe como conta ATIVA (chamada: CadastroUsuarios.php)
-CREATE PROCEDURE proc_usuario_email_existe(
+-- Checa se email já existe e retorna id + email_verificado (chamada: CadastroUsuarios.php)
+CREATE PROCEDURE proc_usuario_buscar_email(
     IN p_email VARCHAR(150)
 )
 SQL SECURITY DEFINER
 BEGIN
-    SELECT id FROM usuarios WHERE email = p_email AND email_verificado = 1 LIMIT 1;
+    SELECT id, email_verificado, confirmacao_token FROM usuarios WHERE email = p_email LIMIT 1;
+END $$
+
+-- Atualiza cadastro pendente (não verificado) com novos dados (chamada: CadastroUsuarios.php)
+CREATE PROCEDURE proc_usuario_atualizar_pendente(
+    IN p_id INT,
+    IN p_nome VARCHAR(100),
+    IN p_telefone VARCHAR(20),
+    IN p_endereco VARCHAR(200),
+    IN p_nascimento DATE,
+    IN p_senha VARCHAR(255),
+    IN p_confirmacao_token VARCHAR(128),
+    IN p_confirmacao_expira DATETIME
+)
+SQL SECURITY DEFINER
+BEGIN
+    UPDATE usuarios
+    SET nome = p_nome,
+        telefone = p_telefone,
+        endereco = p_endereco,
+        data_nascimento = p_nascimento,
+        senha = p_senha,
+        confirmacao_token = p_confirmacao_token,
+        confirmacao_expira = p_confirmacao_expira
+    WHERE id = p_id;
+    SELECT 'Sucesso' AS resultado;
+END $$
+
+-- Confirma email verificado pelo token (chamada: confirmar_cadastro_email.php)
+CREATE PROCEDURE proc_usuario_confirmar_email(
+    IN p_token VARCHAR(128)
+)
+SQL SECURITY DEFINER
+BEGIN
+    DECLARE v_id INT DEFAULT NULL;
+    SELECT id INTO v_id FROM usuarios
+    WHERE confirmacao_token = p_token AND confirmacao_expira > NOW()
+    LIMIT 1;
+
+    IF v_id IS NULL THEN
+        SELECT NULL AS id, 'Token invalido ou expirado' AS resultado;
+    ELSE
+        UPDATE usuarios
+        SET email_verificado = 1,
+            confirmacao_token = NULL,
+            confirmacao_expira = NULL
+        WHERE id = v_id;
+        SELECT v_id AS id, 'Sucesso' AS resultado;
+    END IF;
 END $$
 
 -- Salva token de recuperação de senha (chamada: Solicitacao.php)
@@ -146,6 +186,10 @@ BEGIN
     SELECT ROW_COUNT() AS afetadas;
 END $$
 
+-- ============================================================
+-- PROCEDURES DE ROUPA
+-- ============================================================
+
 -- Cria roupa (chamada: CadastroRoupas.php)
 CREATE PROCEDURE proc_roupa_criar(
     IN p_tipo VARCHAR(100),
@@ -161,44 +205,6 @@ BEGIN
     SELECT 'Sucesso' AS resultado;
 END $$
 
--- Registra um log de atividade (chamada: Vários arquivos PHP)
--- p_id_usuario pode ser NULL para eventos sem usuário autenticado (ex: falha de login)
-CREATE PROCEDURE proc_log_atividade(
-    IN p_id_usuario INT,
-    IN p_descricao  VARCHAR(255),
-    IN p_ip_address VARCHAR(45),
-    IN p_user_agent VARCHAR(512)
-)
-SQL SECURITY DEFINER
-BEGIN
-    INSERT INTO activity_log (id_usuario, descricao, ip_address, user_agent, data_hora)
-    VALUES (p_id_usuario, p_descricao, p_ip_address, p_user_agent, NOW());
-END $$
 DELIMITER ;
 
 -- A criação de usuários agora é dinâmica e ocorre nos scripts banco.sh / banco.ps1 baseando-se no .env
-
-DELIMITER $$
-
--- Lista todos os logs de atividade (chamada: admin/pegadas.php)
-CREATE PROCEDURE proc_log_listar()
-SQL SECURITY DEFINER
-BEGIN
-    SELECT
-        al.id_log,
-        al.id_usuario,
-        COALESCE(u.nome, '—') AS nome_usuario,
-        COALESCE(u.email, '—') AS email_usuario,
-        al.descricao,
-        al.ip_address,
-        al.user_agent,
-        al.data_hora
-    FROM activity_log al
-    LEFT JOIN usuarios u ON al.id_usuario = u.id
-    ORDER BY al.data_hora DESC;
-END $$
-
-DELIMITER ;
-
-GRANT ALL PRIVILEGES ON bazar.* TO 'bazar'@'localhost';
-FLUSH PRIVILEGES;
