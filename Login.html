@@ -174,7 +174,7 @@ form.addEventListener("submit", async (e) => {
             } else if (data.success) {
                 setFeedback(data.mensagem || "Login realizado!", "success");
                 setTimeout(() => {
-                    window.location.href = "index.html";
+                    window.location.href = "PaginaUsuario.php";
                 }, 1200);
             } else {
                 setFeedback(data.mensagem || "E-mail ou senha inválidos.", "error");
@@ -195,7 +195,7 @@ form.addEventListener("submit", async (e) => {
             if (data.success) {
                 setFeedback(data.mensagem || "Login realizado!", "success");
                 setTimeout(() => {
-                    window.location.href = "index.html";
+                    window.location.href = "PaginaUsuario.php";
                 }, 800);
             } else {
                 setFeedback(data.mensagem || "Código inválido.", "error");

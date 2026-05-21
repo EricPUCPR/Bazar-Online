@@ -17,8 +17,8 @@ if ($conn->connect_error) {
 db_ensure_roupa_schema($conn);
 
 $sql = "
-    SELECT id, titulo, tipo, tamanho, sexo, estado, local_doacao, foto_path, pausado, criado_em
-    FROM roupas
+    SELECT id, titulo, tipo, tamanho, sexo, estado, local_doacao, foto_path, criado_em
+    FROM view_roupas_ativas
     ORDER BY id DESC
 ";
 

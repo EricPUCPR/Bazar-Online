@@ -113,7 +113,6 @@ if ($userEncontrado && password_verify($senha, $userEncontrado['senha'])) {
     ]);
 
 } else {
-    log_atividade(null, "Tentativa de login falhou para o e-mail: $email");
     echo json_encode([
         "success"  => false,
         "mensagem" => "E-mail ou senha inválidos."

@@ -16,57 +16,25 @@ if (!isset($_SESSION['usuario_id'])) {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['field']) && isset($_POST['value'])) {
-    header('Content-Type: application/json');
-    $field = $_POST['field'];
-    $value = trim($_POST['value']);
-    $id_usuario = (int) $_SESSION['usuario_id'];
-
-    $allowed_fields = ['nome', 'telefone', 'endereco', 'data_nascimento'];
-    if (!in_array($field, $allowed_fields)) {
-        echo json_encode(['success' => false, 'message' => 'Campo inválido.']);
-        exit;
-    }
-
-    if ($value !== '') {
-        if ($field === 'nome' && !preg_match('/^[a-zA-ZÀ-ÿ\s]{8,}$/u', $value)) {
-            echo json_encode(['success' => false, 'message' => 'O nome deve conter apenas letras e ter no mínimo 8 caracteres.']);
-            exit;
-        }
-        if ($field === 'data_nascimento') {
-            $dataAtual = new DateTime();
-            $dataNascObj = DateTime::createFromFormat('Y-m-d', $value);
-            $idade = $dataNascObj ? $dataNascObj->diff($dataAtual)->y : -1;
-            if (!$dataNascObj || $idade < 18 || $idade > 120 || $dataNascObj > $dataAtual) {
-                echo json_encode(['success' => false, 'message' => 'A idade deve ser entre 18 e 120 anos.']);
-                exit;
-            }
-        }
-    }
-
-    $val_to_save = ($value === '') ? NULL : $value;
-    if ($field === 'nome' && $value === '') {
-        $val_to_save = '';
-    }
-
-    $stmt = $conn->prepare("UPDATE usuarios SET {$field} = ? WHERE id = ?");
-    $stmt->bind_param("si", $val_to_save, $id_usuario);
-    
-    if ($stmt->execute()) {
-        if ($field === 'nome') {
-            $_SESSION['usuario_nome'] = $value;
-        }
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Erro ao atualizar.']);
-    }
-    $stmt->close();
-    exit;
-}
-
 $id = (int) $_SESSION['usuario_id'];
 
-$stmt = $conn->prepare("SELECT nome, email, telefone, endereco, data_nascimento, is_admin FROM usuarios WHERE id = ? LIMIT 1");
+if (isset($_GET['excluir_campo'])) {
+    $campoParaApagar = $_GET['excluir_campo'];
+    
+    $camposPermitidos = ['telefone', 'endereco', 'data_nascimento']; 
+
+    if (in_array($campoParaApagar, $camposPermitidos)) {
+        $stmt = $conn->prepare("UPDATE usuarios SET $campoParaApagar = NULL WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->close();
+        
+        header("Location: " . strtok($_SERVER["REQUEST_URI"], '?'));
+        exit;
+    }
+}
+
+$stmt = $conn->prepare("SELECT nome, email, telefone, endereco, data_nascimento, is_admin, telegram_chat_id, pergunta_seguranca FROM usuarios WHERE id = ? LIMIT 1");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -83,6 +51,66 @@ if ($isAdminAccount && !$isAdmin) {
 }
 
 $mensagemPerfil = "";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['telegram_chat_id'])) {
+    $telegramChatId = trim($_POST['telegram_chat_id']);
+
+    if ($telegramChatId === '') {
+        $stmt = $conn->prepare("UPDATE usuarios SET telegram_chat_id = NULL WHERE id = ?");
+        $stmt->bind_param("i", $id);
+    } else {
+        $stmt = $conn->prepare("UPDATE usuarios SET telegram_chat_id = ? WHERE id = ?");
+        $stmt->bind_param("si", $telegramChatId, $id);
+    }
+
+    if ($stmt->execute()) {
+        $mensagemPerfil = "Telegram atualizado com sucesso.";
+    } else {
+        $mensagemPerfil = "Não foi possível atualizar o Telegram.";
+    }
+
+    $stmt->close();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' 
+    && isset($_POST['pergunta_seguranca'], $_POST['resposta_seguranca'])) {
+
+    $pergunta = trim($_POST['pergunta_seguranca']);
+    $resposta = trim($_POST['resposta_seguranca']);
+
+    if ($pergunta === '' || $resposta === '') {
+
+        $mensagemPerfil = "Preencha a pergunta e a resposta.";
+
+    } else {
+
+        $respostaHash = password_hash(
+            strtolower($resposta),
+            PASSWORD_DEFAULT
+        );
+
+        $stmt = $conn->prepare("
+            UPDATE usuarios
+            SET pergunta_seguranca = ?, resposta_seguranca_hash = ?
+            WHERE id = ?
+        ");
+
+        $stmt->bind_param(
+            "ssi",
+            $pergunta,
+            $respostaHash,
+            $id
+        );
+
+        if ($stmt->execute()) {
+            $mensagemPerfil = "Pergunta de segurança salva com sucesso.";
+        } else {
+            $mensagemPerfil = "Não foi possível salvar a pergunta.";
+        }
+
+        $stmt->close();
+    }
+}
 
 if (isset($_GET['excluir'])) {
     if ($isAdmin) {
@@ -115,8 +143,28 @@ if (isset($_GET['excluir'])) {
 <title>Meu Perfil</title>
 <link rel="stylesheet" href="assets/css/app.css">
 <style>
-    .edit-btn { cursor: pointer; margin-left: 10px; font-size: 0.9em; }
-    .edit-input { font-size: 1em; padding: 2px 5px; margin-left: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    .profile-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 10px;
+        background-color: #f0f4f8; 
+        border-radius: 6px;
+    }
+    .btn-deletar-campo {
+        background: none;
+        border: none;
+        color: #ff4d4d;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        padding-left: 10px;
+    }
+    .btn-deletar-campo:hover {
+        color: #ff0000;
+        font-weight: bold;
+    }
 </style>
 </head>
 
@@ -145,11 +193,104 @@ if (isset($_GET['excluir'])) {
 <p class="erro"><?= e($mensagemPerfil) ?></p>
 <?php endif; ?>
 
-<div class="profile-info"><b>Nome:</b> <span id="display-nome"><?= e($user['nome'] ?? '') ?></span> <span class="edit-btn" onclick="editField('nome')">📝</span></div>
-<div class="profile-info"><b>E-mail:</b> <?= e($user['email'] ?? '') ?></div>
-<div class="profile-info"><b>Telefone:</b> <span id="display-telefone"><?= e($user['telefone'] ?? '') ?></span> <span class="edit-btn" onclick="editField('telefone')">📝</span></div>
-<div class="profile-info"><b>Endereço:</b> <span id="display-endereco"><?= e($user['endereco'] ?? '') ?></span> <span class="edit-btn" onclick="editField('endereco')">📝</span></div>
-<div class="profile-info"><b>Nascimento:</b> <span id="display-data_nascimento"><?= e($user['data_nascimento'] ?? '') ?></span> <span class="edit-btn" onclick="editField('data_nascimento')">📝</span></div>
+<div class="profile-info">
+    <span><b>Nome:</b> <?= e($user['nome'] ?? '') ?></span>
+</div>
+
+<div class="profile-info">
+    <span><b>E-mail:</b> <?= e($user['email'] ?? '') ?></span>
+</div>
+
+<div class="profile-info">
+    <span><b>Telegram Chat ID:</b> <?= e($user['telegram_chat_id'] ?? 'Não vinculado') ?></span>
+</div>
+
+<div class="profile-info">
+    <span><b>Telefone:</b> <?= e($user['telefone'] ?? 'Não informado') ?></span>
+    <?php if (!empty($user['telefone'])): ?>
+        <a href="?excluir_campo=telefone" class="btn-deletar-campo" onclick="return confirm('Tem certeza que deseja excluir seu telefone?')">❌</a>
+    <?php endif; ?>
+</div>
+
+<div class="profile-info">
+    <span><b>Endereço:</b> <?= e($user['endereco'] ?? 'Não informado') ?></span>
+    <?php if (!empty($user['endereco'])): ?>
+        <a href="?excluir_campo=endereco" class="btn-deletar-campo" onclick="return confirm('Tem certeza que deseja excluir seu endereço?')">❌</a>
+    <?php endif; ?>
+</div>
+
+<div class="profile-info">
+    <span><b>Nascimento:</b> <?= e($user['data_nascimento'] ?? 'Não informado') ?></span>
+    <?php if (!empty($user['data_nascimento'])): ?>
+        <a href="?excluir_campo=data_nascimento" class="btn-deletar-campo" onclick="return confirm('Tem certeza que deseja excluir sua data de nascimento?')">❌</a>
+    <?php endif; ?>
+</div>
+
+<?php if ($isAdmin): ?>
+
+<div class="profile-info">
+    <span><b>Telegram Chat ID:</b> <?= e($user['telegram_chat_id'] ?? 'Não vinculado') ?></span>
+</div>
+
+<form method="POST">
+    <label for="telegram_chat_id">Vincular Telegram</label>
+
+    <input 
+        type="text" 
+        id="telegram_chat_id" 
+        name="telegram_chat_id" 
+        placeholder="Digite seu Chat ID do Telegram"
+        value="<?= e($user['telegram_chat_id'] ?? '') ?>"
+    >
+
+    <button type="submit" class="btn btn-block">
+        Salvar Telegram
+    </button>
+</form>
+
+<form method="POST">
+    <label for="pergunta_seguranca">Pergunta de segurança</label>
+
+    <select id="pergunta_seguranca" name="pergunta_seguranca">
+        <option value="">Selecione uma pergunta</option>
+
+        <option value="Qual o nome do seu primeiro animal?">
+            Qual o nome do seu primeiro animal?
+        </option>
+
+        <option value="Qual a cidade onde você nasceu?">
+            Qual a cidade onde você nasceu?
+        </option>
+
+        <option value="Qual o nome da sua escola de infância?">
+            Qual o nome da sua escola de infância?
+        </option>
+
+        <option value="Qual o nome da sua mãe?">
+            Qual o nome da sua mãe?
+        </option>
+
+        <option value="Qual foi seu primeiro videogame?">
+            Qual foi seu primeiro videogame?
+        </option>
+    </select>
+
+    <label for="resposta_seguranca">Resposta</label>
+
+    <input
+        type="password"
+        id="resposta_seguranca"
+        name="resposta_seguranca"
+        placeholder="Digite a resposta"
+    >
+
+    <button type="submit" class="btn btn-block">
+        Salvar pergunta
+    </button>
+</form>
+
+<?php endif; ?>
+<br>
 
 <?php if (!$isAdmin): ?>
     <a class="btn btn-block btn-danger"
@@ -166,67 +307,6 @@ if (isset($_GET['excluir'])) {
 </div>
 
 </div>
-
-<script>
-function editField(field) {
-    const displaySpan = document.getElementById('display-' + field);
-    if (displaySpan.querySelector('input')) return;
-
-    const currentValue = displaySpan.innerText.trim();
-    
-    let inputType = 'text';
-    if (field === 'data_nascimento') inputType = 'date';
-    else if (field === 'telefone') inputType = 'tel';
-
-    const input = document.createElement('input');
-    input.type = inputType;
-    input.value = currentValue;
-    input.className = 'edit-input';
-    
-    if (field === 'telefone') {
-        input.addEventListener("input", () => {
-            let valor = input.value.replace(/\D/g, "").slice(0, 11);
-            if (valor.length > 2) {
-                valor = `(${valor.slice(0, 2)}) ${valor.slice(2)}`;
-            }
-            if (valor.length > 10) {
-                valor = `${valor.slice(0, 10)}-${valor.slice(10)}`;
-            }
-            input.value = valor;
-        });
-    }
-
-    displaySpan.innerHTML = '';
-    displaySpan.appendChild(input);
-    input.focus();
-
-    input.addEventListener('keydown', async function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const value = input.value;
-            const formData = new FormData();
-            formData.append('field', field);
-            formData.append('value', value);
-
-            try {
-                const response = await fetch('PaginaUsuario.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    displaySpan.textContent = value;
-                } else {
-                    alert(data.message);
-                }
-            } catch(err) {
-                alert('Erro ao salvar as informações.');
-            }
-        }
-    });
-}
-</script>
 
 </body>
 </html>

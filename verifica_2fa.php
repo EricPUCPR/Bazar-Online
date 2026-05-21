@@ -1,11 +1,10 @@
 <?php
-require_once __DIR__ . '/config/session.php';
-require_once __DIR__ . '/config/app.php'; // necessário para log_atividade em todos os fluxos
+session_start();
+require_once __DIR__ . '/config/app.php';
 header('Content-Type: application/json');
 
 $codigo = trim($_POST['codigo'] ?? '');
 
-// Sessão 2FA inexistente — sem id de usuário para logar
 if (!isset($_SESSION['2fa_user_id'], $_SESSION['2fa_user_nome'], $_SESSION['2fa_codigo'], $_SESSION['2fa_expira'])) {
     echo json_encode([
         "success" => false,
@@ -14,12 +13,8 @@ if (!isset($_SESSION['2fa_user_id'], $_SESSION['2fa_user_nome'], $_SESSION['2fa_
     exit;
 }
 
-$userId2fa = (int) $_SESSION['2fa_user_id'];
-
-// Código expirado
 if (time() > (int) $_SESSION['2fa_expira']) {
-    log_atividade($userId2fa, "Código 2FA expirado durante tentativa de login.");
-    unset($_SESSION['2fa_user_id'], $_SESSION['2fa_user_nome'], $_SESSION['2fa_codigo'], $_SESSION['2fa_expira']);
+    unset($_SESSION['2fa_user_id'], $_SESSION['2fa_user_nome'], $_SESSION['2fa_user_email'], $_SESSION['2fa_codigo'], $_SESSION['2fa_expira']);
     echo json_encode([
         "success" => false,
         "mensagem" => "Código expirado. Faça login novamente."
@@ -27,9 +22,7 @@ if (time() > (int) $_SESSION['2fa_expira']) {
     exit;
 }
 
-// Formato inválido (não são 6 dígitos numéricos)
 if (!preg_match('/^\d{6}$/', $codigo)) {
-    log_atividade($userId2fa, "Código 2FA com formato inválido informado durante login.");
     echo json_encode([
         "success" => false,
         "mensagem" => "Digite um código válido com 6 dígitos."
@@ -37,9 +30,7 @@ if (!preg_match('/^\d{6}$/', $codigo)) {
     exit;
 }
 
-// Código incorreto
 if ($codigo !== (string) $_SESSION['2fa_codigo']) {
-    log_atividade($userId2fa, "Código 2FA incorreto informado durante tentativa de login.");
     echo json_encode([
         "success" => false,
         "mensagem" => "Código de verificação inválido."
@@ -47,13 +38,19 @@ if ($codigo !== (string) $_SESSION['2fa_codigo']) {
     exit;
 }
 
-// Sucesso — promove sessão e registra login
-$_SESSION['usuario_id']   = $_SESSION['2fa_user_id'];
+session_regenerate_id(true);
+$_SESSION['usuario_id'] = $_SESSION['2fa_user_id'];
 $_SESSION['usuario_nome'] = $_SESSION['2fa_user_nome'];
 $_SESSION['usuario_email'] = $_SESSION['2fa_user_email'] ?? null;
 unset($_SESSION['admin_logado']);
 
-log_atividade($_SESSION['usuario_id'], "Login realizado com sucesso via 2FA.");
+app_log_event(
+    'Login',
+    'Login de usuário validado por código de e-mail.',
+    (int) $_SESSION['usuario_id'],
+    $_SESSION['usuario_nome'],
+    $_SESSION['2fa_user_email'] ?? null
+);
 
 unset($_SESSION['2fa_user_id'], $_SESSION['2fa_user_nome'], $_SESSION['2fa_user_email'], $_SESSION['2fa_codigo'], $_SESSION['2fa_expira']);
 

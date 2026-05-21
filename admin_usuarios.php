@@ -113,8 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $usuarios = [];
-$resultado = $conn->query("SELECT id, nome, email, is_admin FROM usuarios ORDER BY id ASC");
-
+$resultado = $conn->query("
+    SELECT id, nome, email, is_admin
+    FROM view_usuarios_admin
+    ORDER BY id ASC
+");
 if ($resultado) {
     while ($usuario = $resultado->fetch_assoc()) {
         $usuarios[] = $usuario;

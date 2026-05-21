@@ -67,7 +67,7 @@ while (true) {
                 continue;
             }
 
-            echo "[Admin ID {$chat_id}] recebido: {$texto}\n";
+            echo "Chat ID: {$chat_id} | Mensagem: {$texto}\n";
 
             // ---- Lógica do Bot (Terceiro Método de Autenticação) ----
             if ($texto === '/start') {

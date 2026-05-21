@@ -303,12 +303,114 @@ function configure_mailer($mail, ?string $fromName = null): void
     );
 }
 
+function enviar_telegram(string $chatId, string $mensagem): bool
+{
+    $token = env_value('BOT_TOKEN');
+
+    if ($token === '' || $chatId === '') {
+        return false;
+    }
+
+    $url = "https://api.telegram.org/bot{$token}/sendMessage";
+
+    $dados = [
+        'chat_id' => $chatId,
+        'text' => $mensagem
+    ];
+
+    $opcoes = [
+        'http' => [
+            'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method' => 'POST',
+            'content' => http_build_query($dados),
+            'timeout' => 10
+        ]
+    ];
+
+    $contexto = stream_context_create($opcoes);
+
+    return @file_get_contents($url, false, $contexto) !== false;
+}
+
 function e($value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
-app_load_env();
+function app_load_env_encrypted(): void
+{
+    static $loaded = false;
+    if ($loaded) {
+        return;
+    }
+
+    $loaded = true;
+
+    $path = dirname(__DIR__) . '/.env.enc';
+
+    if (!is_readable($path)) {
+        app_load_env();
+        return;
+    }
+
+    $chaveBase64 = getenv('ENV_AES_KEY');
+
+    if (!$chaveBase64) {
+        die('Chave AES não configurada.');
+    }
+
+    $chave = base64_decode($chaveBase64);
+    $dados = base64_decode(file_get_contents($path));
+
+    $iv = substr($dados, 0, 12);
+    $tag = substr($dados, 12, 16);
+    $criptografado = substr($dados, 28);
+
+    $conteudo = openssl_decrypt(
+        $criptografado,
+        'aes-256-gcm',
+        $chave,
+        OPENSSL_RAW_DATA,
+        $iv,
+        $tag
+    );
+
+    if ($conteudo === false) {
+        die('Erro ao descriptografar .env.enc');
+    }
+
+    foreach (explode("\n", $conteudo) as $line) {
+        $line = trim($line);
+
+        if ($line === '' || strpos($line, '#') === 0) {
+            continue;
+        }
+
+        $parts = explode('=', $line, 2);
+
+        if (count($parts) !== 2) {
+            continue;
+        }
+
+        $key = trim($parts[0]);
+        $value = trim($parts[1]);
+
+        $quote = substr($value, 0, 1);
+        if (($quote === '"' || $quote === "'") && substr($value, -1) === $quote) {
+            $value = substr($value, 1, -1);
+            if ($quote === '"') {
+                $value = stripcslashes($value);
+            }
+        }
+
+        $_ENV[$key] = $value;
+        putenv($key . '=' . $value);
+    }
+}
+
+putenv('ENV_AES_KEY=NX6eQsCExOgAKC/v8BtDHcmMn2B/GtBqaG5mHhHVHlU=');
+
+app_load_env_encrypted();
 app_configure_errors();
 
 function validar_recaptcha(string $token_resposta): bool

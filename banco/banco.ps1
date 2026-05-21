@@ -13,7 +13,7 @@ foreach($line in Get-Content $envFilePath) {
     }
 }
 
-$SQL_FILE = "banco\banco.sql"
+$SQL_FILE = "banco.sql"
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 Write-Host "Configurando banco de dados Bazar..." -ForegroundColor Cyan
 

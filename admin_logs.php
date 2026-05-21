@@ -23,8 +23,7 @@ db_ensure_log_schema($conn);
 $logs = [];
 $resultado = $conn->query("
     SELECT usuario_id, nome, email, acao, detalhes, criado_em
-    FROM logs_sistema
-    ORDER BY criado_em DESC, id DESC
+    FROM view_logs_recentes
 ");
 
 if ($resultado) {
