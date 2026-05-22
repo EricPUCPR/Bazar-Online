@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Tempo de geração: 22/05/2026 às 01:31
+-- Tempo de geração: 22/05/2026 às 03:22
 -- Versão do servidor: 10.4.28-MariaDB
 -- Versão do PHP: 8.2.4
 
@@ -60,44 +60,14 @@ INSERT INTO `logs_sistema` (`id`, `usuario_id`, `nome`, `email`, `acao`, `detalh
 (16, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-20 22:26:27'),
 (17, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Login admin', 'Login admin validado por código de e-mail.', '2026-05-20 22:26:53'),
 (18, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-20 22:48:42'),
-(19, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Exclusão de anúncio', 'Admin excluiu um anúncio de roupa.', '2026-05-20 22:59:32'),
-(20, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Exclusão de anúncio', 'Admin excluiu um anúncio de roupa.', '2026-05-20 23:00:27'),
-(21, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Finalização de doação', 'Usuário finalizou uma doação e compartilhou dados de contato.', '2026-05-20 23:02:24'),
-(22, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-20 23:03:13'),
-(23, 21, 'marco antonio', 'marcomarkowicz@gmail.com', 'Login', 'Login de usuário validado por código de e-mail.', '2026-05-20 23:05:35'),
-(24, 21, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-20 23:07:33'),
-(25, 21, 'marco antonio', 'marcomarkowicz@gmail.com', 'Login', 'Login de usuário validado por código de e-mail.', '2026-05-20 23:10:57'),
-(26, 21, 'marco antonio', 'marcomarkowicz@gmail.com', 'Finalização de doação', 'Usuário finalizou uma doação e compartilhou dados de contato.', '2026-05-20 23:13:10'),
-(27, 21, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-20 23:14:06'),
-(28, 21, 'marco antonio', 'marcomarkowicz@gmail.com', 'Login', 'Login de usuário validado por código de e-mail.', '2026-05-20 23:24:33'),
-(29, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 15:37:57'),
-(30, 22, 'marcoantonio', 'Marco.a.markowicz@gmail.com', 'Criação de conta', 'Usuário iniciou cadastro e validação de e-mail.', '2026-05-21 18:53:25'),
-(31, 22, NULL, NULL, 'Validação de e-mail', 'Usuário validou o e-mail da conta.', '2026-05-21 18:54:03'),
-(32, 22, 'marcoantonio', 'Marco.a.markowicz@gmail.com', 'Login', 'Login de usuário validado por código de e-mail.', '2026-05-21 18:55:44'),
-(33, 22, 'marcoantonio', 'Marco.a.markowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 18:56:54'),
-(34, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Login admin', 'Login admin validado por código de e-mail.', '2026-05-21 20:22:15'),
-(35, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 20:23:19'),
-(36, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 21:10:04'),
-(37, 23, 'André Matos', 'andre.dsmat2019@gmail.com', 'Criação de conta', 'Usuário iniciou cadastro e validação de e-mail.', '2026-05-21 21:11:58'),
-(38, 23, NULL, NULL, 'Validação de e-mail', 'Usuário validou o e-mail da conta.', '2026-05-21 21:12:15'),
-(39, 23, 'André Matos', 'andre.dsmat2019@gmail.com', 'Login', 'Login de usuário validado por código de e-mail.', '2026-05-21 21:12:42'),
-(40, 23, 'André Matos', 'andre.dsmat2019@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 21:16:43'),
-(41, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Login admin', 'Login admin validado por código de e-mail.', '2026-05-21 21:19:46'),
-(42, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 21:19:50'),
-(43, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 21:45:25'),
-(44, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 21:47:05'),
-(45, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Exclusão de anúncio', 'Admin excluiu um anúncio de roupa.', '2026-05-21 21:50:48'),
-(46, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 21:52:59'),
-(47, 23, 'André Matos', 'andre.dsmat2019@gmail.com', 'Login', 'Login de usuário validado por código de e-mail.', '2026-05-21 21:53:43'),
-(48, 23, 'André Matos', 'andre.dsmat2019@gmail.com', 'Finalização de doação', 'Usuário finalizou uma doação e compartilhou dados de contato.', '2026-05-21 21:54:06'),
-(49, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Login admin', 'Login admin validado por código de e-mail.', '2026-05-21 21:55:13'),
-(50, 22, NULL, NULL, 'Remoção de usuário', 'Admin removeu um usuário pelo painel.', '2026-05-21 21:55:30'),
-(51, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 21:55:34'),
-(52, 24, 'marcoantoniooo', 'marco.a.markowicz@gmial.com', 'Criação de conta', 'Usuário iniciou cadastro e validação de e-mail.', '2026-05-21 21:56:35'),
-(53, 25, 'ana clara', 'marco.a.markowicz@gmail.com', 'Criação de conta', 'Usuário iniciou cadastro e validação de e-mail.', '2026-05-21 21:59:12'),
-(54, 25, NULL, NULL, 'Validação de e-mail', 'Usuário validou o e-mail da conta.', '2026-05-21 21:59:42'),
-(55, 25, 'ana clara', 'marco.a.markowicz@gmail.com', 'Login', 'Login de usuário validado por código de e-mail.', '2026-05-21 22:01:57'),
-(56, 25, 'ana clara', 'marco.a.markowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-21 22:09:21');
+(19, 8, 'marco', NULL, 'Logout', 'Usuário encerrou a sessão.', '2026-05-22 00:23:06'),
+(20, 22, 'André Matos', 'andre.dsmat2019@gmail.com', 'Criação de conta', 'Usuário iniciou cadastro e validação de e-mail.', '2026-05-22 00:23:54'),
+(21, 22, NULL, NULL, 'Validação de e-mail', 'Usuário validou o e-mail da conta.', '2026-05-22 00:24:08'),
+(22, 22, 'André Matos', 'andre.dsmat2019@gmail.com', 'Login', 'Login de usuário validado por código de e-mail.', '2026-05-22 00:24:42'),
+(23, 22, 'André Matos', 'andre.dsmat2019@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-22 00:25:01'),
+(24, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Login admin', 'Login admin validado por código de e-mail.', '2026-05-22 00:25:24'),
+(25, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Exclusão de anúncio', 'Admin excluiu um anúncio de roupa.', '2026-05-22 00:25:30'),
+(26, 1, 'marco antonio', 'marcomarkowicz@gmail.com', 'Logout', 'Usuário encerrou a sessão.', '2026-05-22 00:34:04');
 
 -- --------------------------------------------------------
 
@@ -150,10 +120,8 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nome`, `email`, `telefone`, `endereco`, `data_nascimento`, `senha`, `criado_em`, `recuperacao_token`, `recuperacao_expira`, `email_verificado`, `confirmacao_token`, `confirmacao_expira`, `is_admin`, `telegram_chat_id`, `pergunta_seguranca`, `resposta_seguranca_hash`) VALUES
-(1, 'marco antonio', 'marcomarkowicz@gmail.com', NULL, 'Nao Sei', '2005-06-07', '$2y$10$vIMZusCuLiyHFcUZfW7ZMu2CXHIYt3DetZh6oJF8c6l077CJkN.2C', '2026-05-20 21:11:29', NULL, NULL, 1, NULL, NULL, 1, '8081602036', 'Qual o nome do seu primeiro animal?', '$2y$10$x17b3mqOLrmJO5LKfuDR1e6M/b7mJUADlVl/MvVddn8px0zoJjFcq'),
-(23, 'André Matos', 'andre.dsmat2019@gmail.com', '(41) 98775-8630', 'Rua Nao Sei', '2007-11-16', '$2y$10$XGdWuG0SGopezBRoMIEYcORrodf/K6Ss17J/En5.hfp2YgmGoyI4.', '2026-05-21 21:11:58', NULL, NULL, 1, NULL, NULL, 0, NULL, NULL, NULL),
-(24, 'marcoantoniooo', 'marco.a.markowicz@gmial.com', '(41) 92894-0303', 'nsei', '2005-06-07', '$2y$10$nQ3rKSfG8nuHBj6FhxlZqOfmkr50tamX9GOI8bVIwecxodvSn7Wpm', '2026-05-21 21:56:35', NULL, NULL, 0, '499cb8a5f862735c398b384bc228a4fc6325a83804fe74744b7ae80d6d639d44', '2026-05-22 23:56:35', 0, NULL, NULL, NULL),
-(25, 'ana clara', 'marco.a.markowicz@gmail.com', '(98) 71239-7120', 'nhdiujaijoiwj1@A', '2008-05-08', '$2y$10$zlXGIOwpVXAFSCu8YdPYNeqzVYn5M.alfN6iJ5aPWJF2zold7VFd2', '2026-05-21 21:59:12', NULL, NULL, 1, NULL, NULL, 0, NULL, NULL, NULL);
+(1, 'marco antonio', 'marcomarkowicz@gmail.com', NULL, 'Nao Sei', '2005-06-07', '$2y$10$6PjzNG/0n7K7QWV9uv5PretOoqLoDMrhl0H2YDoNTESm8Fyr2nYJO', '2026-05-20 21:11:29', NULL, NULL, 1, NULL, NULL, 1, '8081602036', 'Qual o nome do seu primeiro animal?', '$2y$10$RvyTyDTM2WnaALIE5beoW.ZhjOby3DydKl.Y.3VxBwlaShEKJL8tW'),
+(22, 'André Matos', 'andre.dsmat2019@gmail.com', '(41) 98775-8630', 'Rua Nao Sei', '2007-11-16', '$2y$10$xG7Q0q.FPVdK/T/nJdDFhu8/CFzz7dh5mKPBMIvuAmZjMaXp3kUjG', '2026-05-22 00:23:54', NULL, NULL, 1, NULL, NULL, 0, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -233,7 +201,7 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de tabela `logs_sistema`
 --
 ALTER TABLE `logs_sistema`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT de tabela `roupas`
@@ -245,7 +213,7 @@ ALTER TABLE `roupas`
 -- AUTO_INCREMENT de tabela `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
