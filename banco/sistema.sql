@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Tempo de geração: 22/05/2026 às 01:31
+-- Tempo de geração: 22/05/2026 às 03:18
 -- Versão do servidor: 10.4.28-MariaDB
 -- Versão do PHP: 8.2.4
 
@@ -46,13 +46,10 @@ CREATE TABLE `roupas` (
 --
 
 INSERT INTO `roupas` (`id`, `titulo`, `tipo`, `tamanho`, `sexo`, `estado`, `local_doacao`, `foto_path`, `pausado`, `id_usuario`, `criado_em`) VALUES
-(4, 'blusa de frio', 'nsei', 'M', 'Masculino', 'Semi-Novo', 'curitiba', 'assets/uploads/roupas/c073bc1110fd09c544ef467f3c91e48f.png', 1, 1, '2026-05-20 23:01:16'),
-(5, 'nase', 'camisa', 'M', 'Masculino', 'Semi-Novo', 'colombo', 'assets/uploads/roupas/18f099f5b7375add54b701951fea6ebf.png', 1, 21, '2026-05-20 23:07:11'),
-(6, 'ola', 'cueca', 'P', 'Unissex', 'Novo', 'sao paulo', 'assets/uploads/roupas/56768606d55b6abd5adc3098c7091cbb.png', 1, 21, '2026-05-20 23:12:52'),
-(7, 'blusa de frio', 'blusa', 'P', 'Unissex', 'Semi-Novo', 'Curitiba', 'assets/uploads/roupas/d90ff168c3b586f365e1b8b24c64b5c4.webp', 0, 1, '2026-05-21 21:48:34'),
-(8, 'Saia', 'saia', 'M', 'Feminino', 'Semi-Novo', 'Curitiba', 'assets/uploads/roupas/0af271bbca34970464152bc4ef1b95e9.webp', 0, 1, '2026-05-21 21:48:57'),
-(9, 'Calca Cargo', 'Calca', 'G', 'Masculino', 'Novo', 'Curitiba', 'assets/uploads/roupas/6096deab3835457cc7834cbcf003911e.jpg', 0, 1, '2026-05-21 21:49:32'),
-(11, 'calca masculina', 'calca', 'GG', 'Masculino', 'Novo', 'Curitiba', 'assets/uploads/roupas/7557bb8932da544db90b31608e9eedb6.jpg', 1, 1, '2026-05-21 21:51:13');
+(3, 'Calca', 'Calca', 'G', 'Masculino', 'Novo', 'parana', 'assets/uploads/roupas/86f72b65a92d0217eda51084a4d3d3a5.jpg', 0, 1, '2026-05-22 00:25:54'),
+(4, 'Calca', 'Calca', 'G', 'Masculino', 'Novo', 'São Paulo', 'assets/uploads/roupas/c1a8397ccfa7e2a2e62dcf4622fd5e85.jpg', 0, 1, '2026-05-22 00:26:20'),
+(5, '01', '01', 'PP', 'Masculino', 'Novo', '01', 'assets/uploads/roupas/865359fc127b3968680b69f1255c2e94.webp', 0, 1, '2026-05-22 00:26:45'),
+(6, 'Saia', 'Saia', 'XG', 'Masculino', 'Novo', 'Centro', 'assets/uploads/roupas/20aa4709ed5ec6dac732c9bc7b48d3b0.webp', 0, 1, '2026-05-22 00:27:03');
 
 -- --------------------------------------------------------
 
@@ -99,7 +96,7 @@ ALTER TABLE `roupas`
 -- AUTO_INCREMENT de tabela `roupas`
 --
 ALTER TABLE `roupas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
