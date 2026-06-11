@@ -1,1 +1,7 @@
+crypto/keys/
+crypto/keys/
+.env.enc
 .DS_Store
+.DS_Store
+crypto/keys/
+assets/uploads/

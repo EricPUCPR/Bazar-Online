@@ -415,17 +415,121 @@
             telefone.value = valor;
         });
 
-        document.getElementById('formCadastro').addEventListener('submit', function (e) {
+        document.getElementById('formCadastro').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
             if (!this.checkValidity()) {
-                e.preventDefault();
+                this.classList.add('was-validated');
+                return;
             }
-            this.classList.add('was-validated');
+
+            await criptografarCadastro();
         });
 
         window.addEventListener("load", () => {
             validarCaptchaVisibilidade();
             senha.dispatchEvent(new Event("input"));
         });
+
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+
+            let binary = "";
+
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+
+            return btoa(binary);
+        }
+
+        async function criptografarCadastro() {
+            const dadosCadastro = {
+                nome: document.getElementById("nome").value,
+                email: document.getElementById("email").value,
+                datanascimento: document.getElementById("datanascimento").value,
+                telefone: document.getElementById("telefone").value,
+                endereco: document.getElementById("endereco").value,
+                senha: document.getElementById("senha").value,
+                confirmar_senha: document.getElementById("confirmar_senha").value
+            };
+
+            console.log("Dados originais antes da criptografia:", dadosCadastro);
+
+            const publicKeyDer = await fetch("../crypto/public_key.php")
+                .then(response => response.arrayBuffer());
+
+            console.log("Chave pública recebida do servidor:", publicKeyDer);
+
+            const publicKey = await crypto.subtle.importKey(
+                "spki",
+                publicKeyDer,
+                {
+                    name: "RSA-OAEP",
+                    hash: "SHA-1"
+                },
+                false,
+                ["encrypt"]
+            );
+
+            const aesKey = await crypto.subtle.generateKey(
+                {
+                    name: "AES-GCM",
+                    length: 256
+                },
+                true,
+                ["encrypt"]
+            );
+
+            console.log("Chave AES de sessão gerada:", aesKey);
+
+            const aesRaw = await crypto.subtle.exportKey("raw", aesKey);
+
+            console.log("Chave AES exportada em bytes:", arrayBufferToBase64(aesRaw));
+
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+
+            const dadosTexto = JSON.stringify(dadosCadastro);
+
+            const dadosCriptografados = await crypto.subtle.encrypt(
+                {
+                    name: "AES-GCM",
+                    iv: iv
+                },
+                aesKey,
+                new TextEncoder().encode(dadosTexto)
+            );
+
+            const chaveAesCriptografada = await crypto.subtle.encrypt(
+                {
+                    name: "RSA-OAEP"
+                },
+                publicKey,
+                aesRaw
+            );
+
+            const pacote = {
+                key: arrayBufferToBase64(chaveAesCriptografada),
+                iv: arrayBufferToBase64(iv),
+                data: arrayBufferToBase64(dadosCriptografados)
+            };
+
+            console.log("Pacote criptografado enviado ao back:", pacote);
+
+            const resposta = await fetch("../crypto/receber_cadastro_criptografado.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(pacote)
+            });
+
+            const resultado = await resposta.json();
+
+            console.log("Resposta do back:", resultado);
+
+            alert(resultado.mensagem || "Processo finalizado.");
+        }
     </script>
 
 </body>
