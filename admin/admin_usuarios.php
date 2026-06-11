@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/../config/app.php';
 
 if (
     !isset($_SESSION['usuario_id'], $_SESSION['admin_logado'])
@@ -129,15 +129,15 @@ if ($resultado) {
 <head>
 <meta charset="UTF-8">
 <title>Gerenciar Usuários</title>
-<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/app.css">
 </head>
 
 <body class="store-page admin-page">
 
 <div class="app-header">
     <span class="saudacao is-visible">Admin: <?= e($_SESSION['usuario_nome'] ?? 'Admin') ?></span>
-    <a href="index.html" class="header-link btn-primary">Voltar</a>
-    <a href="logout.php" class="header-link btn-light logout" onclick="return confirm('Tem certeza que deseja sair?')">
+    <a href="../index.html" class="header-link btn-primary">Voltar</a>
+    <a href="../auth/logout.php" class="header-link btn-light logout" onclick="return confirm('Tem certeza que deseja sair?')">
         <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <path d="M16 17l5-5-5-5"></path>
@@ -149,8 +149,8 @@ if ($resultado) {
 
 <div class="app-main">
     <div class="sidebar">
-        <a href="CadastroRoupas.php" class="user-icon" title="Cadastrar roupa" aria-label="Cadastrar roupa">👕</a>
-        <a href="PaginaUsuario.php" class="user-icon" title="Perfil" aria-label="Perfil">👤</a>
+        <a href="../doacoes/cadastro_roupas.php" class="user-icon" title="Cadastrar roupa" aria-label="Cadastrar roupa">👕</a>
+        <a href="../pagina_usuario.php" class="user-icon" title="Perfil" aria-label="Perfil">👤</a>
         <a href="admin_logs.php" class="user-icon" title="Logs" aria-label="Logs">📋</a>
         <a href="admin_usuarios.php" class="user-icon" title="Gerenciar usuários" aria-label="Gerenciar usuários">👥</a>
     </div>

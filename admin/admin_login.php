@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <title>Login Admin</title>
-<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/app.css">
 </head>
 
 <body class="auth-page">
 
 <div class="app-header">
-    <a href="index.html" class="header-link btn-light">Voltar</a>
+    <a href="../index.html" class="header-link btn-light">Voltar</a>
 </div>
 
 <div class="page-main">
@@ -113,13 +113,6 @@ form.addEventListener("submit", async (event) => {
             formData.append("metodo", metodoInput.value);
         }
 
-        if (aguardandoCodigo) {
-            formData.append("codigo", codigoInput.value.trim());
-        } else {
-            formData.append("email", emailInput.value.trim());
-            formData.append("metodo", metodoInput.value);
-        }
-
         const response = await fetch(endpoint, {
             method: "POST",
             body: formData
@@ -160,7 +153,7 @@ form.addEventListener("submit", async (event) => {
 }
 
         setTimeout(() => {
-            window.location.href = "index.html";
+            window.location.href = "../index.html";
         }, 800);
     } catch (error) {
         console.error(error);

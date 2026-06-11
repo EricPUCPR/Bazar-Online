@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/../config/app.php';
 
 header('Content-Type: application/json');
 
@@ -64,7 +64,7 @@ $afetadas = $stmt->affected_rows;
 $stmt->close();
 
 if ($ok && $afetadas > 0 && $fotoPath) {
-    $caminhoFoto = __DIR__ . '/' . ltrim($fotoPath, '/');
+    $caminhoFoto = __DIR__ . '/../' . ltrim($fotoPath, '/');
     if (is_file($caminhoFoto)) {
         @unlink($caminhoFoto);
     }

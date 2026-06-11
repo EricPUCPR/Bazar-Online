@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Recuperar Senha</title>
-    <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="stylesheet" href="../../assets/css/app.css">
 </head>
 
 <body class="auth-page">
 
 <div class="app-header">
-    <a href="Login.html" class="header-link btn-light">Login</a>
-    <a href="index.html" class="header-link btn-primary">Voltar</a>
+    <a href="../login.html" class="header-link btn-light">Login</a>
+    <a href="../../index.html" class="header-link btn-primary">Voltar</a>
 </div>
 
 <div class="page-main">
@@ -18,12 +18,12 @@
         <h2>Recuperar Senha</h2>
         <p>Insira seu e-mail cadastrado e enviaremos um link para você criar uma nova senha.</p>
 
-        <form action="Solicitacao.php" method="POST">
+        <form action="solicitar_redefinicao.php" method="POST">
             <input type="email" name="email" placeholder="Digite seu e-mail" required>
             <button type="submit" class="btn-block">Enviar Link de Recuperação</button>
         </form>
 
-        <a href="Login.html" class="form-link">Voltar</a>
+        <a href="../login.html" class="form-link">Voltar</a>
     </div>
 </div>
 

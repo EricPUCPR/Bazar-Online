@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/../config/app.php';
 
 if (isset($_SESSION['usuario_id'], $_SESSION['usuario_nome'])) {
     app_log_event(
@@ -29,6 +29,6 @@ if (ini_get("session.use_cookies")) {
 
 session_destroy();
 
-header("Location: Login.html");
+header("Location: login.html");
 exit;
 ?>

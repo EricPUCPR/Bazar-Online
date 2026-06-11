@@ -11,9 +11,9 @@
 <div class="app-header">
     <span id="saudacaoUsuario" class="saudacao"></span>
     <a href="#" class="header-link btn-light" onclick="toggleCart()">Minha lista (<span id="count">0</span>)</a>
-    <a href="Login.html" id="loginLink" class="header-link btn-light">Login</a>
-    <a href="CadastroUsuarios.php" id="cadastroLink" class="header-link btn-primary">Cadastrar</a>
-    <a href="logout.php" id="logoutLink" class="header-link btn-light logout-icon" title="Sair" aria-label="Sair" hidden onclick="return confirm('Tem certeza que deseja sair?')">
+    <a href="auth/login.html" id="loginLink" class="header-link btn-light">Login</a>
+    <a href="auth/cadastro_usuarios.php" id="cadastroLink" class="header-link btn-primary">Cadastrar</a>
+    <a href="auth/logout.php" id="logoutLink" class="header-link btn-light logout-icon" title="Sair" aria-label="Sair" hidden onclick="return confirm('Tem certeza que deseja sair?')">
         <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <path d="M16 17l5-5-5-5"></path>
@@ -25,10 +25,10 @@
 <div class="app-main">
 
     <div class="sidebar">
-        <a href="CadastroRoupas.php" class="user-icon">👕</a>
-        <a href="PaginaUsuario.php" class="user-icon">👤</a>
-        <a href="admin_logs.php" class="user-icon admin-only" title="Logs" aria-label="Logs" hidden>📋</a>
-        <a href="admin_usuarios.php" class="user-icon admin-only" title="Gerenciar usuários" aria-label="Gerenciar usuários" hidden>👥</a>
+        <a href="doacoes/cadastro_roupas.php" class="user-icon">👕</a>
+        <a href="pagina_usuario.php" class="user-icon">👤</a>
+        <a href="admin/admin_logs.php" class="user-icon admin-only" title="Logs" aria-label="Logs" hidden>📋</a>
+        <a href="admin/admin_usuarios.php" class="user-icon admin-only" title="Gerenciar usuários" aria-label="Gerenciar usuários" hidden>👥</a>
     </div>
 
     <div class="content">
@@ -116,7 +116,7 @@ function atualizarHeader(logado, admin, nome) {
 
 async function carregarUsuarioLogado() {
     try {
-        const resposta = await fetch("session_usuario.php", {
+        const resposta = await fetch("config/session_usuario.php", {
             method: "GET",
             credentials: "same-origin"
         });
@@ -240,7 +240,7 @@ function renderizarRoupas(lista) {
 
 async function carregarRoupas() {
     try {
-        const resposta = await fetch("listar_roupas.php", {
+        const resposta = await fetch("doacoes/listar_roupas.php", {
             method: "GET",
             credentials: "same-origin"
         });
@@ -316,7 +316,7 @@ async function excluirAnuncio(id) {
     formData.append("id", id);
 
     try {
-        const resposta = await fetch("excluir_roupa.php", {
+        const resposta = await fetch("doacoes/excluir_roupa.php", {
             method: "POST",
             body: formData,
             credentials: "same-origin"
@@ -345,7 +345,7 @@ function irParaFinalizacao() {
     }
 
     const ids = cart.map((item) => Number(item.id)).join(",");
-    window.location.href = `finalizar_doacao.php?ids=${encodeURIComponent(ids)}`;
+    window.location.href = `doacoes/finalizar_doacao.php?ids=${encodeURIComponent(ids)}`;
 }
 
 </script>

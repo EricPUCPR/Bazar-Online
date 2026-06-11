@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Login</title>
-<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/app.css">
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <style>
     .captcha-container {
@@ -17,8 +17,8 @@
 <body class="auth-page">
 
 <div class="app-header">
-    <a href="index.html" class="header-link btn-light">Voltar</a>
-    <a href="CadastroUsuarios.php" class="header-link btn-primary">Criar conta</a>
+    <a href="../index.html" class="header-link btn-light">Voltar</a>
+    <a href="cadastro_usuarios.php" class="header-link btn-primary">Criar conta</a>
 </div>
 
 <div class="page-main">
@@ -50,8 +50,8 @@
 
 </form>
 
-<a href="CadastroUsuarios.php" class="form-link">Criar conta</a>
-<a href="RecuperarSenha.php" class="form-link small-link">Esqueci minha senha</a>
+<a href="cadastro_usuarios.php" class="form-link">Criar conta</a>
+<a href="password_reset/redefinir_senha.php" class="form-link small-link">Esqueci minha senha</a>
 
 </div>
 </div>
@@ -174,7 +174,7 @@ form.addEventListener("submit", async (e) => {
             } else if (data.success) {
                 setFeedback(data.mensagem || "Login realizado!", "success");
                 setTimeout(() => {
-                    window.location.href = "PaginaUsuario.php";
+                    window.location.href = "../pagina_usuario.php";
                 }, 1200);
             } else {
                 setFeedback(data.mensagem || "E-mail ou senha inválidos.", "error");
@@ -195,7 +195,7 @@ form.addEventListener("submit", async (e) => {
             if (data.success) {
                 setFeedback(data.mensagem || "Login realizado!", "success");
                 setTimeout(() => {
-                    window.location.href = "PaginaUsuario.php";
+                    window.location.href = "../pagina_usuario.php";
                 }, 800);
             } else {
                 setFeedback(data.mensagem || "Código inválido.", "error");

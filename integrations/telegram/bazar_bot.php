@@ -2,7 +2,7 @@
 // Script de bot do Telegram via Long-Polling
 // Deve ser rodado via linha de comando: php bazar_bot.php
 
-require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/../../config/app.php';
 
 $token_bot = env_value('BOT_TOKEN');
 $admin_chat_id = env_value('TELEGRAM_ADMIN_CHAT_ID'); // Gestão segura de quem pode interagir
@@ -14,7 +14,12 @@ if (empty($token_bot)) {
 $base_url = "https://api.telegram.org/bot{$token_bot}";
 
 // Arquivo para guardar o último update_id processado (evita processar mensagens repetidas)
-$offset_file = __DIR__ . '/banco/bot_offset.txt';
+$offset_file = __DIR__ . '/../../banco/bot_offset.txt';
+$offset_dir = dirname($offset_file);
+
+if (!is_dir($offset_dir)) {
+    mkdir($offset_dir, 0777, true);
+}
 $offset = 0;
 if (file_exists($offset_file)) {
     $offset = (int) file_get_contents($offset_file);
@@ -44,6 +49,8 @@ while (true) {
     }
 
     $dados = json_decode($resposta, true);
+
+    
 
     if ($dados && isset($dados['ok']) && $dados['ok']) {
         foreach ($dados['result'] as $update) {

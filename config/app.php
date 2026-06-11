@@ -356,7 +356,7 @@ function app_load_env_encrypted(): void
     $chaveBase64 = getenv('ENV_AES_KEY');
 
     if (!$chaveBase64) {
-        die('Chave AES não configurada.');
+        die('Erro de configuração da aplicação.');
     }
 
     $chave = base64_decode($chaveBase64);
@@ -376,7 +376,7 @@ function app_load_env_encrypted(): void
     );
 
     if ($conteudo === false) {
-        die('Erro ao descriptografar .env.enc');
+        die('Erro de configuração da aplicação.');
     }
 
     foreach (explode("\n", $conteudo) as $line) {

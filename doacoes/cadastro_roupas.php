@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/../config/app.php';
 
 $isPost = $_SERVER["REQUEST_METHOD"] === "POST";
 	
@@ -14,7 +14,7 @@ if (!isset($_SESSION['usuario_id'])) {
         exit;
     }
 
-    header("Location: Login.html");
+    header("Location: ../auth/login.html");
     exit;
 }
 
@@ -86,7 +86,7 @@ if ($isPost) {
         exit;
     }
 
-    $uploadDir = __DIR__ . '/assets/uploads/roupas';
+    $uploadDir = __DIR__ . '/../assets/uploads/roupas';
     if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0777, true)) {
         echo json_encode([
             "success" => false,
@@ -163,13 +163,13 @@ if ($isPost) {
 <head>
     <meta charset="UTF-8">
     <title>Publicar Roupa</title>
-    <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="stylesheet" href="../assets/css/app.css">
 </head>
 
 <body class="auth-page">
 
     <div class="app-header">
-        <a href="index.html" class="header-link btn-light">Voltar</a>
+        <a href="../index.html" class="header-link btn-light">Voltar</a>
     </div>
 
     <div class="page-main">
@@ -238,7 +238,7 @@ if ($isPost) {
             const formData = new FormData(this);
 
             try {
-                const response = await fetch("CadastroRoupas.php", {
+                const response = await fetch("cadastro_roupas.php", {
                     method: "POST",
                     body: formData
                 });
@@ -250,7 +250,7 @@ if ($isPost) {
 
                     if (data.success) {
                         setTimeout(() => {
-                            window.location.href = "index.html";
+                            window.location.href = "../index.html";
                         }, 800);
                     }
 

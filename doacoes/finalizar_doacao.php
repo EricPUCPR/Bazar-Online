@@ -1,13 +1,13 @@
 <?php
 session_start();
-require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/../config/app.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require 'vendor/mailer/PHPMailer/src/Exception.php';
-require 'vendor/mailer/PHPMailer/src/PHPMailer.php';
-require 'vendor/mailer/PHPMailer/src/SMTP.php';
+require __DIR__ . '/../vendor/mailer/PHPMailer/src/Exception.php';
+require __DIR__ . '/../vendor/mailer/PHPMailer/src/PHPMailer.php';
+require __DIR__ . '/../vendor/mailer/PHPMailer/src/SMTP.php';
 
 if (!isset($_SESSION['usuario_id'], $_SESSION['usuario_nome'])) {
     header("Location: Login.html");

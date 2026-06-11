@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/../config/app.php';
 
 $mensagem = "Não foi possível validar o e-mail.";
 $ok = false;
@@ -71,13 +71,13 @@ if ($conn->connect_error) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Validação de E-mail</title>
-<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/app.css">
 </head>
 <body class="status-page">
 
 <div class="status-card">
     <p class="status-message <?php echo $ok ? '' : 'error'; ?>"><?php echo e($mensagem); ?></p>
-    <a class="form-link" href="Login.html">Ir para o Login</a>
+    <a class="form-link" href="login.html">Ir para o Login</a>
 </div>
 
 </body>

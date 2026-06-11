@@ -1,13 +1,13 @@
 <?php
 session_start();
-require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/../config/app.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require 'vendor/mailer/PHPMailer/src/Exception.php';
-require 'vendor/mailer/PHPMailer/src/PHPMailer.php';
-require 'vendor/mailer/PHPMailer/src/SMTP.php';
+require __DIR__ . '/../vendor/mailer/PHPMailer/src/Exception.php';
+require __DIR__ . '/../vendor/mailer/PHPMailer/src/PHPMailer.php';
+require __DIR__ . '/../vendor/mailer/PHPMailer/src/SMTP.php';
 
 header('Content-Type: application/json');
 
@@ -180,6 +180,6 @@ $_SESSION['admin_2fa_expira'] = $expiraEm;
 
 echo json_encode([
     "success" => true,
-    "mensagem" => "Código enviado para o e-mail,s se cadastrado."
+    "mensagem" => "Código de verificação enviado."
 ]);
 ?>

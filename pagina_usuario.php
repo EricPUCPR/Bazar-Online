@@ -12,7 +12,7 @@ if ($conn->connect_error) {
 db_ensure_usuario_schema($conn);
 
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: Login.html");
+    header("Location: auth/Login.html");
     exit;
 }
 
@@ -46,7 +46,7 @@ $isAdmin = $isAdminAccount && !empty($_SESSION['admin_logado']);
 
 if ($isAdminAccount && !$isAdmin) {
     session_destroy();
-    header("Location: admin_login.php");
+    header("Location: admin/admin_login.php");
     exit;
 }
 
@@ -130,7 +130,7 @@ if (isset($_GET['excluir'])) {
         $stmt->close();
 
         session_destroy();
-        header("Location: Login.html");
+        header("Location: auth/Login.html");
         exit;
     }
 }
@@ -172,7 +172,7 @@ if (isset($_GET['excluir'])) {
 
 <div class="app-header">
     <a href="index.html" class="header-link btn-primary">Voltar</a>
-    <a href="logout.php" class="header-link btn-light logout" onclick="return confirm('Tem certeza que deseja sair?')">
+    <a href="auth/logout.php" class="header-link btn-light logout" onclick="return confirm('Tem certeza que deseja sair?')">
         <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <path d="M16 17l5-5-5-5"></path>
@@ -199,10 +199,6 @@ if (isset($_GET['excluir'])) {
 
 <div class="profile-info">
     <span><b>E-mail:</b> <?= e($user['email'] ?? '') ?></span>
-</div>
-
-<div class="profile-info">
-    <span><b>Telegram Chat ID:</b> <?= e($user['telegram_chat_id'] ?? 'Não vinculado') ?></span>
 </div>
 
 <div class="profile-info">

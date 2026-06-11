@@ -120,7 +120,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && !$erro_token) {
 <body class="auth-page">
 
 <div class="app-header">
-    <a href="../../Login.html" class="header-link btn-light">Login</a>
+    <a href="../login.html" class="header-link btn-light">Login</a>
     <a href="../../index.html" class="header-link btn-primary">Voltar</a>
 </div>
 
@@ -165,7 +165,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && !$erro_token) {
             </form>
         <?php endif; ?>
 
-        <a href="../../Login.html" class="form-link">Voltar para o Login</a>
+        <a href="../login.html" class="form-link">Voltar para o Login</a>
     </div>
 </div>
 
@@ -181,7 +181,7 @@ function togglePassword(id, el) {
     }
 }
 </script>
-<script src="script.js"></script>
+<script src="password_reset.js"></script>
 
 </body>
 </html>

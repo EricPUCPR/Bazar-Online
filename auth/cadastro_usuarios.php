@@ -4,23 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <title>Cadastro</title>
-    <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="stylesheet" href="../assets/css/app.css">
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body class="auth-page">
 
     <div class="app-header">
-        <a href="Login.html" class="header-link btn-light">Login</a>
-        <a href="index.html" class="header-link btn-primary">Voltar</a>
+        <a href="login.html" class="header-link btn-light">Login</a>
+        <a href="../index.html" class="header-link btn-primary">Voltar</a>
     </div>
 
     <?php
-    require 'vendor/mailer/PHPMailer/src/Exception.php';
-    require 'vendor/mailer/PHPMailer/src/PHPMailer.php';
-    require 'vendor/mailer/PHPMailer/src/SMTP.php';
-    require_once __DIR__ . '/config/app.php';
-
+    require __DIR__ . '/../vendor/mailer/PHPMailer/src/Exception.php';
+    require __DIR__ . '/../vendor/mailer/PHPMailer/src/PHPMailer.php';
+    require __DIR__ . '/../vendor/mailer/PHPMailer/src/SMTP.php';
+    require_once __DIR__ . '/../config/app.php';
     function normalizarTexto($texto)
     {
         $texto = trim((string) $texto);
@@ -117,7 +116,7 @@
             }
 
             if ($idExistente && $jaVerificado === 1) {
-                echo "<script>window.location.href='Login.html?status=email_ja_cadastrado';</script>";
+                echo "<script>window.location.href='login.html?status=email_ja_cadastrado';</script>";
                 exit;
             }
 
@@ -226,10 +225,10 @@
                     </body>
                     </html>
                 ";
-                    $mail->AltBody = "Para validar seu e-mail, acesse: $linkConfirmacao . Este link expira em 24 horas.";
+                    $mail->AltBody = "Para validar seu e-mail, acesse: {$linkConfirmacao}. Este link expira em 24 horas.";
                     $mail->send();
 
-                    echo "<script>window.location.href='Login.html?status=confirmacao_cadastro_enviada';</script>";
+                    echo "<script>window.location.href='login.html?status=confirmacao_cadastro_enviada';</script>";
                     exit;
                 } catch (\PHPMailer\PHPMailer\Exception $e) {
                     $erro = "Não foi possível enviar o e-mail de validação.";
@@ -291,7 +290,7 @@
                 <div class="terms-check">
                     <label>
                         <input type="checkbox" id="termos" name="termos" <?= isset($_POST['termos']) ? 'checked' : '' ?> required>
-                        Eu aceito os <a href="legal/terms/index.html" target="_blank">termos de uso</a>
+                        Eu aceito os <a href="../legal/terms/index.html" target="_blank">termos de uso</a>
                     </label>
                 </div>
 
@@ -301,7 +300,7 @@
 
             </form>
 
-            <a href="Login.html" class="form-link">Já tenho cadastro</a>
+            <a href="login.html" class="form-link">Já tenho cadastro</a>
 
         </div>
     </div>

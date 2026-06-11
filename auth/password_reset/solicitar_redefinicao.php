@@ -1,17 +1,17 @@
 <?php
-require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/../../config/app.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require 'vendor/mailer/PHPMailer/src/Exception.php';
-require 'vendor/mailer/PHPMailer/src/PHPMailer.php';
-require 'vendor/mailer/PHPMailer/src/SMTP.php';
+require __DIR__ . '/../../vendor/mailer/PHPMailer/src/Exception.php';
+require __DIR__ . '/../../vendor/mailer/PHPMailer/src/PHPMailer.php';
+require __DIR__ . '/../../vendor/mailer/PHPMailer/src/SMTP.php';
 
 $conn = db_connect('DB_NAME_USUARIOS');
 
 if ($conn->connect_error) {
-    header("Location: Login.html?status=erro");
+    header("Location: ../login.html?status=erro");
     exit;
 }
 
@@ -22,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST["email"] ?? "");
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        header("Location: Login.html?status=email_invalido");
+        header("Location: ../login.html?status=email_invalido");
         exit;
     }
 
@@ -37,13 +37,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->close();
 
     if (!$emailExiste) {
-        header("Location: Login.html?status=nao_encontrado");
+        header("Location: ../login.html?status=nao_encontrado");
         exit;
     }
 
     $updateToken = $conn->prepare("UPDATE usuarios SET recuperacao_token = ?, recuperacao_expira = ? WHERE email = ?");
     if (!$updateToken) {
-        header("Location: Login.html?status=erro");
+        header("Location: ../login.html?status=erro");
         exit;
     }
     $updateToken->bind_param("sss", $token, $expira, $email);
@@ -58,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
         $host = $_SERVER['HTTP_HOST'];
         $path = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
-        $link = $protocol . "://" . $host . $path . "/auth/password_reset/pagina_recuperacao_de_senha.php?token=" . $token;
+        $link = $protocol . "://" . $host . $path . "/pagina_recuperacao_de_senha.php?token=" . $token;
 
         $mail->isHTML(true);
         $mail->Subject = "Recuperação de Senha";
@@ -79,11 +79,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $mail->send();
 
-        header("Location: Login.html?status=ok");
+        header("Location: ../login.html?status=ok");
         exit;
 
     } catch (Exception $e) {
-        header("Location: Login.html?status=erro");
+        header("Location: ../login.html?status=erro");
         exit;
     }
 }
