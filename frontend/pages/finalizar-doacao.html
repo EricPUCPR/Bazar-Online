@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Finalizar Doação</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="auth-page">
+
+<div class="app-header">
+    <a href="../index.html" class="header-link btn-primary">Voltar</a>
+</div>
+
+<div class="page-main">
+    <div class="box donation-box">
+        <h2>Finalizar Doação</h2>
+
+        <p id="feedback"></p>
+
+        <div id="loadingMessage" class="feedback">Carregando detalhes das peças...</div>
+
+        <form id="finalizarForm" style="display: none;">
+            <p>Você demonstrou interesse em doar/receber as seguintes peças:</p>
+            
+            <div id="donationSummary" class="donation-summary">
+                <!-- Roupas selecionadas renderizadas via JS -->
+            </div>
+
+            <div class="terms-check">
+                <label>
+                    <input type="checkbox" id="aceite_compartilhamento" name="aceite_compartilhamento" required>
+                    Eu aceito compartilhar meus dados de contato (Nome, E-mail e Telefone) com os anunciantes para coordenar a retirada.
+                </label>
+            </div>
+
+            <button type="submit" class="btn-block" style="margin-top: 15px;">Confirmar Interesse</button>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+    import { api, auth } from '../assets/js/api.js';
+
+    // Redireciona se não estiver logado
+    if (!auth.estaLogado()) {
+        window.location.href = "login.html";
+    }
+
+    const form = document.getElementById("finalizarForm");
+    const loadingMessage = document.getElementById("loadingMessage");
+    const donationSummary = document.getElementById("donationSummary");
+    const feedback = document.getElementById("feedback");
+
+    const params = new URLSearchParams(window.location.search);
+    const idsRaw = params.get("ids") || "";
+    const ids = idsRaw.split(",").map(Number).filter(id => id > 0);
+
+    function setFeedback(message, status = "muted") {
+        feedback.className = `feedback feedback-${status}`;
+        feedback.textContent = message;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    async function carregarPecas() {
+        if (ids.length === 0) {
+            loadingMessage.textContent = "Nenhuma peça selecionada.";
+            return;
+        }
+
+        try {
+            const resposta = await api.listarRoupas();
+            if (resposta.success) {
+                const roupasFiltradas = resposta.roupas.filter(r => ids.includes(Number(r.id)));
+
+                if (roupasFiltradas.length === 0) {
+                    loadingMessage.textContent = "As peças selecionadas não estão mais disponíveis.";
+                    return;
+                }
+
+                donationSummary.innerHTML = roupasFiltradas.map(roupa => `
+                    <div class="donation-summary-item" data-id="${roupa.id}">
+                        <strong>${escapeHtml(roupa.titulo || roupa.tipo)}</strong>
+                        <small>Tipo: ${escapeHtml(roupa.tipo || "-")} • Tam: ${escapeHtml(roupa.tamanho || "-")} • Estado: ${escapeHtml(roupa.estado || "-")}</small>
+                        <small>Local de entrega: ${escapeHtml(roupa.local_doacao || "Não informado")}</small>
+                    </div>
+                `).join("");
+
+                loadingMessage.style.display = "none";
+                form.style.display = "block";
+            } else {
+                loadingMessage.textContent = "Não foi possível carregar as informações das doações.";
+            }
+        } catch (error) {
+            console.error(error);
+            loadingMessage.textContent = "Erro ao carregar os dados das peças.";
+        }
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setFeedback("Finalizando doação...", "muted");
+
+        try {
+            const response = await api.finalizarDoacao(ids);
+
+            if (response.success) {
+                setFeedback(response.mensagem || "Doação realizada com sucesso!", "success");
+                setTimeout(() => {
+                    // Sucesso: redireciona para a vitrine
+                    window.location.href = "../index.html";
+                }, 2500);
+            } else {
+                setFeedback(response.mensagem || "Erro ao finalizar doação.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+
+    carregarPecas();
+</script>
+
+</body>
+</html>

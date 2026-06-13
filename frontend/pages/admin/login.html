@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Login Admin</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/app.css">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="auth-page">
+
+<div class="app-header">
+    <a href="../../index.html" class="header-link btn-light">Voltar</a>
+</div>
+
+<div class="page-main">
+    <div class="box">
+        <h2 id="tituloAdmin">Login Admin</h2>
+
+        <form id="adminLoginForm">
+            <div id="emailArea">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" placeholder="Digite o e-mail admin" required>
+            </div>
+
+            <div id="metodoArea">
+                <label for="metodo">Método de autenticação</label>
+                <select id="metodo" name="metodo" required>
+                    <option value="telegram">Telegram</option>
+                    <option value="email">E-mail</option>
+                    <option value="pergunta">Pergunta de segurança</option>
+                </select>
+            </div>
+
+            <div id="codigoArea" class="two-factor-area">
+                <label for="codigoAdmin" id="codigoLabel">Código de verificação</label>
+                <input type="text" id="codigoAdmin" name="codigo" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code" placeholder="Digite os 6 dígitos">
+                <small id="codigoSmall">Enviamos um código para seu Telegram/E-mail.</small>
+            </div>
+
+            <div id="perguntaArea" class="two-factor-area">
+                <label id="textoPergunta" for="respostaSeguranca">Pergunta de segurança</label>
+                <input type="password" id="respostaSeguranca" name="resposta_seguranca" placeholder="Digite sua resposta">
+                <small>Responda a pergunta cadastrada no seu perfil.</small>
+            </div>
+
+            <span id="feedback"></span>
+
+            <button type="submit" id="submitBtn" class="btn-block">Login</button>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+    import { api } from '../../assets/js/api.js';
+
+    const metodoInput = document.getElementById("metodo");
+    const emailInput = document.getElementById("email");
+    const form = document.getElementById("adminLoginForm");
+    const tituloAdmin = document.getElementById("tituloAdmin");
+    const emailArea = document.getElementById("emailArea");
+    const metodoArea = document.getElementById("metodoArea");
+    const codigoArea = document.getElementById("codigoArea");
+    const codigoLabel = document.getElementById("codigoLabel");
+    const codigoSmall = document.getElementById("codigoSmall");
+    const codigoInput = document.getElementById("codigoAdmin");
+    const submitBtn = document.getElementById("submitBtn");
+    const feedback = document.getElementById("feedback");
+    const perguntaArea = document.getElementById("perguntaArea");
+    const textoPergunta = document.getElementById("textoPergunta");
+    const respostaSegurancaInput = document.getElementById("respostaSeguranca");
+
+    let pendingToken = "";
+    let aguardandoPergunta = false;
+    let aguardandoCodigo = false;
+
+    function setFeedback(message, status = "muted") {
+        feedback.className = `feedback feedback-${status}`;
+        feedback.textContent = message;
+    }
+
+    function mostrarCodigoForm(metodo) {
+        aguardandoCodigo = true;
+        aguardandoPergunta = false;
+
+        tituloAdmin.textContent = "Digite o código 2FA";
+        emailArea.style.display = "none";
+        metodoArea.style.display = "none";
+        perguntaArea.style.display = "none";
+
+        codigoArea.classList.add("active");
+        codigoInput.required = true;
+        
+        if (metodo === "telegram") {
+            codigoLabel.textContent = "Código do Telegram";
+            codigoSmall.textContent = "Enviamos o código para seu Telegram cadastrado.";
+        } else {
+            codigoLabel.textContent = "Código do E-mail";
+            codigoSmall.textContent = "Enviamos o código para seu e-mail de administrador.";
+        }
+
+        submitBtn.textContent = "Validar código";
+        codigoInput.focus();
+    }
+
+    function mostrarPerguntaForm(perguntaTexto) {
+        aguardandoPergunta = true;
+        aguardandoCodigo = false;
+
+        tituloAdmin.textContent = "Pergunta de Segurança";
+        emailArea.style.display = "none";
+        metodoArea.style.display = "none";
+        codigoArea.style.display = "none";
+
+        perguntaArea.classList.add("active");
+        textoPergunta.textContent = perguntaTexto;
+        respostaSegurancaInput.required = true;
+        submitBtn.textContent = "Validar resposta";
+        respostaSegurancaInput.focus();
+    }
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setFeedback("Carregando...");
+
+        try {
+            if (!aguardandoCodigo && !aguardandoPergunta) {
+                // Etapa 1: Envia e-mail e método
+                const email = emailInput.value.trim();
+                const metodo = metodoInput.value;
+                const response = await api.adminLogin(email, metodo);
+
+                if (response.success) {
+                    pendingToken = response.pending_token;
+                    setFeedback(response.mensagem || "Código ou pergunta prontos.", "success");
+
+                    if (response.pergunta) {
+                        mostrarPerguntaForm(response.texto_pergunta);
+                    } else {
+                        mostrarCodigoForm(metodo);
+                    }
+                } else {
+                    setFeedback(response.mensagem || "Erro na validação do admin.", "error");
+                }
+            } else if (aguardandoPergunta) {
+                // Etapa 2: Valida resposta de segurança
+                const resposta = respostaSegurancaInput.value.trim();
+                const response = await api.adminVerificarPergunta(pendingToken, resposta);
+
+                if (response.success) {
+                    setFeedback("Login administrativo realizado!", "success");
+                    setTimeout(() => {
+                        window.location.href = "../../index.html";
+                    }, 1000);
+                } else {
+                    setFeedback(response.mensagem || "Resposta incorreta.", "error");
+                }
+            } else if (aguardandoCodigo) {
+                // Etapa 2: Valida código 2FA
+                const codigo = codigoInput.value.trim();
+                const response = await api.adminVerificarCodigo(pendingToken, codigo);
+
+                if (response.success) {
+                    setFeedback("Login administrativo realizado!", "success");
+                    setTimeout(() => {
+                        window.location.href = "../../index.html";
+                    }, 1000);
+                } else {
+                    setFeedback(response.mensagem || "Código incorreto ou expirado.", "error");
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+</script>
+
+</body>
+</html>

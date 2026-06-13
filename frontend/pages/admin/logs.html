@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Logs de Auditoria</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/app.css">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+        .admin-page {
+            background-color: var(--color-body);
+        }
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 10px;
+        }
+        .pagination-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .table-search {
+            margin-bottom: 20px;
+        }
+        .table-search input {
+            max-width: 320px;
+            float: right;
+        }
+    </style>
+</head>
+
+<body class="store-page admin-page">
+
+<div class="app-header">
+    <a href="../../index.html" style="margin-right: auto; color: white; font-weight: 700; font-size: 20px; text-decoration: none;">Bazar Admin</a>
+    <a href="usuarios.html" class="header-link btn-light">Usuários</a>
+    <a href="../perfil.html" class="header-link btn-light">Meu Perfil</a>
+    <a href="../../index.html" class="header-link btn-primary">Voltar</a>
+</div>
+
+<div class="app-main">
+    <div class="content" style="padding: 24px;">
+        <div class="admin-panel" style="width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                <h2>Logs do Sistema</h2>
+                <div class="table-search" style="margin: 0;">
+                    <input type="text" id="logSearchInput" placeholder="Pesquisar logs...">
+                </div>
+            </div>
+
+            <p id="feedback"></p>
+
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Ação</th>
+                            <th>Descrição</th>
+                            <th>Usuário</th>
+                            <th>E-mail</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr>
+                            <td colspan="5" class="admin-empty">Carregando logs de auditoria...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container">
+                <span id="pageInfo" class="empty-state"></span>
+                <div class="pagination-buttons">
+                    <button id="btnPrevPage" disabled>Anterior</button>
+                    <button id="btnNextPage" disabled>Próxima</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { api, auth } from '../../assets/js/api.js';
+
+    // Redireciona se não for administrador
+    if (!auth.estaLogado() || !auth.eAdmin()) {
+        window.location.href = "../login.html";
+    }
+
+    const logsTableBody = document.getElementById("logsTableBody");
+    const feedback = document.getElementById("feedback");
+    const logSearchInput = document.getElementById("logSearchInput");
+    
+    const pageInfo = document.getElementById("pageInfo");
+    const btnPrevPage = document.getElementById("btnPrevPage");
+    const btnNextPage = document.getElementById("btnNextPage");
+
+    let allLogs = [];
+    let displayedLogs = [];
+    let currentPage = 1;
+    const limit = 50;
+
+    function setFeedback(message, status = "muted") {
+        feedback.className = `feedback feedback-${status}`;
+        feedback.textContent = message;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    async function carregarLogs() {
+        try {
+            // Pede lote padrão de 500 logs para gerenciar busca e paginação no cliente de forma eficiente e fluida
+            const response = await api.adminListarLogs({ limite: 500, pagina: 1 });
+
+            if (response.success) {
+                allLogs = response.logs || [];
+                filtrarLogs();
+            } else {
+                setFeedback(response.mensagem || "Erro ao carregar logs.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao carregar logs do servidor.", "error");
+        }
+    }
+
+    function filtrarLogs() {
+        const query = logSearchInput.value.toLowerCase().trim();
+
+        if (query === "") {
+            displayedLogs = [...allLogs];
+        } else {
+            displayedLogs = allLogs.filter(log => 
+                (log.acao || "").toLowerCase().includes(query) ||
+                (log.detalhes || "").toLowerCase().includes(query) ||
+                (log.nome || "").toLowerCase().includes(query) ||
+                (log.email || "").toLowerCase().includes(query)
+            );
+        }
+
+        currentPage = 1;
+        renderizarPagina();
+    }
+
+    function renderizarPagina() {
+        const totalLogs = displayedLogs.length;
+        const totalPages = Math.max(1, Math.ceil(totalLogs / limit));
+
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+
+        const start = (currentPage - 1) * limit;
+        const end = Math.min(start + limit, totalLogs);
+        const logsPage = displayedLogs.slice(start, end);
+
+        if (logsPage.length === 0) {
+            logsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="admin-empty">Nenhum log encontrado para a busca.</td>
+                </tr>
+            `;
+            btnPrevPage.disabled = true;
+            btnNextPage.disabled = true;
+            pageInfo.textContent = "Mostrando 0 de 0 logs";
+            return;
+        }
+
+        logsTableBody.innerHTML = logsPage.map(log => {
+            const dataHora = new Date(log.criado_em).toLocaleString("pt-BR");
+            return `
+                <tr>
+                    <td><b>${dataHora}</b></td>
+                    <td><span class="admin-badge">${escapeHtml(log.acao)}</span></td>
+                    <td>${escapeHtml(log.detalhes)}</td>
+                    <td>${escapeHtml(log.nome || "Sistema")}</td>
+                    <td><small>${escapeHtml(log.email || "-")}</small></td>
+                </tr>
+            `;
+        }).join("");
+
+        btnPrevPage.disabled = currentPage === 1;
+        btnNextPage.disabled = currentPage === totalPages;
+        pageInfo.textContent = `Mostrando ${start + 1} a ${end} de ${totalLogs} logs (Página ${currentPage} de ${totalPages})`;
+    }
+
+    btnPrevPage.addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderizarPagina();
+        }
+    });
+
+    btnNextPage.addEventListener("click", () => {
+        const totalPages = Math.ceil(displayedLogs.length / limit);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderizarPagina();
+        }
+    });
+
+    logSearchInput.addEventListener("input", filtrarLogs);
+
+    // Carregamento inicial
+    carregarLogs();
+</script>
+
+</body>
+</html>

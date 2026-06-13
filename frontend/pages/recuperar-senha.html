@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Recuperar Senha</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="auth-page">
+
+<div class="app-header">
+    <a href="login.html" class="header-link btn-light">Login</a>
+    <a href="../index.html" class="header-link btn-primary">Voltar</a>
+</div>
+
+<div class="page-main">
+    <div class="box">
+        <h2>Recuperar Senha</h2>
+        <p>Insira seu e-mail cadastrado e enviaremos um link para você criar uma nova senha.</p>
+
+        <form id="formRecuperar">
+            <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
+            <span id="feedback"></span>
+            <button type="submit" class="btn-block">Enviar Link de Recuperação</button>
+        </form>
+
+        <a href="login.html" class="form-link">Voltar</a>
+    </div>
+</div>
+
+<script type="module">
+    import { api } from '../assets/js/api.js';
+
+    const form = document.getElementById("formRecuperar");
+    const emailInput = document.getElementById("email");
+    const feedback = document.getElementById("feedback");
+
+    function setFeedback(message, status = "muted") {
+        feedback.className = `feedback feedback-${status}`;
+        feedback.textContent = message;
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setFeedback("Carregando...");
+
+        try {
+            const email = emailInput.value.trim();
+            const response = await api.solicitarRecuperacaoSenha(email);
+
+            if (response.success) {
+                setFeedback(response.mensagem || "Se o e-mail estiver cadastrado, você receberá o link.", "success");
+                setTimeout(() => {
+                    window.location.href = "login.html?status=ok";
+                }, 2000);
+            } else {
+                setFeedback(response.mensagem || "Erro ao solicitar recuperação.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+</script>
+
+</body>
+</html>

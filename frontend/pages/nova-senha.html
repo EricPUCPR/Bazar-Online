@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Nova Senha</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+        .regras-senha ul {
+            padding-left: 20px;
+            margin: 8px 0 0;
+        }
+        .regras-senha li.invalid {
+            color: #8d98a5;
+        }
+        .regras-senha li.valid {
+            color: var(--color-success);
+            font-weight: bold;
+        }
+        #erro-regex, #erro-match {
+            display: none;
+            color: var(--color-danger);
+            font-size: 12px;
+            margin-top: 4px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body class="auth-page">
+
+<div class="app-header">
+    <a href="login.html" class="header-link btn-light">Login</a>
+    <a href="../index.html" class="header-link btn-primary">Voltar</a>
+</div>
+
+<div class="page-main">
+    <div class="box">
+        <h2>Nova senha</h2>
+        <p>Digite abaixo sua nova senha:</p>
+
+        <div class="regras-senha">
+            <strong>Sua senha deve conter:</strong>
+            <ul>
+                <li id="req-length" class="invalid">No mínimo 8 caracteres</li>
+                <li id="req-upper" class="invalid">1 Letra maiúscula</li>
+                <li id="req-lower" class="invalid">1 Letra minúscula</li>
+                <li id="req-number" class="invalid">1 Número</li>
+                <li id="req-special" class="invalid">1 Símbolo</li>
+                <li id="req-no-seq" class="invalid">Não é permitida sequência numérica</li>
+            </ul>
+        </div>
+
+        <form id="formSenha">
+            <div class="password-wrapper">
+                <input type="password" name="senha" id="password" required placeholder="Nova senha">
+                <button type="button" class="toggle-password" id="btnToggleSenha" aria-label="Visualizar senha">👁</button>
+            </div>
+            <span id="erro-regex">Senha fraca!</span>
+
+            <div class="password-wrapper">
+                <input type="password" name="confirmar_senha" id="confirmar_senha" required placeholder="Confirme a senha">
+                <button type="button" class="toggle-password" id="btnToggleConfirmar" aria-label="Visualizar confirmar senha">👁</button>
+            </div>
+            <span id="erro-match">As senhas não coincidem.</span>
+            
+            <span id="feedback"></span>
+
+            <button type="submit" class="btn-block" style="margin-top: 15px;">Atualizar senha</button>
+        </form>
+
+        <a href="login.html" class="form-link">Voltar para o Login</a>
+    </div>
+</div>
+
+<script type="module">
+    import { api } from '../assets/js/api.js';
+
+    const form = document.getElementById("formSenha");
+    const password = document.getElementById("password");
+    const confirmarSenha = document.getElementById("confirmar_senha");
+    const feedback = document.getElementById("feedback");
+
+    const reqLength = document.getElementById("req-length");
+    const reqUpper = document.getElementById("req-upper");
+    const reqLower = document.getElementById("req-lower");
+    const reqNumber = document.getElementById("req-number");
+    const reqSpecial = document.getElementById("req-special");
+    const reqNoSeq = document.getElementById("req-no-seq");
+
+    const erroRegex = document.getElementById("erro-regex");
+    const erroMatch = document.getElementById("erro-match");
+
+    const btnToggleSenha = document.getElementById("btnToggleSenha");
+    const btnToggleConfirmar = document.getElementById("btnToggleConfirmar");
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    // Mostra/Oculta senhas
+    function setupTogglePassword(btn, targetId) {
+        btn.addEventListener("click", () => {
+            const campo = document.getElementById(targetId);
+            if (campo.type === "password") {
+                campo.type = "text";
+                btn.textContent = "🙈";
+            } else {
+                campo.type = "password";
+                btn.textContent = "👁";
+            }
+        });
+    }
+    setupTogglePassword(btnToggleSenha, "password");
+    setupTogglePassword(btnToggleConfirmar, "confirmar_senha");
+
+    function setFeedback(message, status = "muted") {
+        feedback.className = `feedback feedback-${status}`;
+        feedback.textContent = message;
+    }
+
+    function validarSenha() {
+        const val = password.value;
+        const temSequenciaNumerica = /(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)/.test(val);
+
+        const checks = [
+            val.length >= 8,
+            /[A-Z]/.test(val),
+            /[a-z]/.test(val),
+            /\d/.test(val),
+            /[@$!%*?&]/.test(val),
+            !temSequenciaNumerica
+        ];
+
+        reqLength.className = checks[0] ? "valid" : "invalid";
+        reqUpper.className = checks[1] ? "valid" : "invalid";
+        reqLower.className = checks[2] ? "valid" : "invalid";
+        reqNumber.className = checks[3] ? "valid" : "invalid";
+        reqSpecial.className = checks[4] ? "valid" : "invalid";
+        reqNoSeq.className = checks[5] ? "valid" : "invalid";
+
+        const senhaValida = checks.every(c => c);
+        erroRegex.style.display = (val !== "" && !senhaValida) ? "block" : "none";
+
+        return senhaValida;
+    }
+
+    function validarMatch() {
+        const match = password.value === confirmarSenha.value;
+        erroMatch.style.display = (confirmarSenha.value !== "" && !match) ? "block" : "none";
+        return match;
+    }
+
+    password.addEventListener("input", () => {
+        validarSenha();
+        validarMatch();
+    });
+    confirmarSenha.addEventListener("input", validarMatch);
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        if (!token) {
+            setFeedback("Token de redefinição ausente ou inválido.", "error");
+            return;
+        }
+
+        const senhaValida = validarSenha();
+        const senhasConferem = validarMatch();
+
+        if (!senhaValida || !senhasConferem) {
+            setFeedback("Corrija os erros na senha antes de continuar.", "error");
+            return;
+        }
+
+        setFeedback("Carregando...");
+
+        try {
+            const response = await api.redefinirSenha(token, password.value, confirmarSenha.value);
+
+            if (response.success) {
+                setFeedback(response.mensagem || "Senha redefinida com sucesso! Faça login.", "success");
+                setTimeout(() => {
+                    window.location.href = "login.html?status=email_confirmado";
+                }, 2000);
+            } else {
+                setFeedback(response.mensagem || "Erro ao redefinir a senha.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+
+    // Estado inicial
+    validarSenha();
+</script>
+
+</body>
+</html>

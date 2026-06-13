@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Validação de E-mail</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="status-page">
+
+<div class="status-card">
+    <h2>Validação de E-mail</h2>
+    <p id="statusMessage" class="status-message">Aguarde, validando o link de confirmação...</p>
+    <a class="form-link" href="login.html" style="margin-top: 20px;">Ir para o Login</a>
+</div>
+
+<script type="module">
+    import { api } from '../assets/js/api.js';
+
+    const statusMessage = document.getElementById("statusMessage");
+
+    async function validarEmail() {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+
+        if (!token) {
+            statusMessage.classList.add("error");
+            statusMessage.textContent = "Link de validação inválido ou ausente.";
+            return;
+        }
+
+        try {
+            const response = await api.confirmarEmail(token);
+
+            if (response.success) {
+                statusMessage.classList.remove("error");
+                statusMessage.textContent = response.mensagem || "O e-mail foi validado com sucesso.";
+            } else {
+                statusMessage.classList.add("error");
+                statusMessage.textContent = response.mensagem || "Link de validação inválido ou expirado.";
+            }
+        } catch (error) {
+            console.error(error);
+            statusMessage.classList.add("error");
+            statusMessage.textContent = "Erro ao conectar com o servidor.";
+        }
+    }
+
+    validarEmail();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Início</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/app.css">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="store-page">
+
+<div class="app-header">
+    <a href="index.html" style="margin-right: auto; color: white; font-weight: 700; font-size: 20px; text-decoration: none;">Bazar Online</a>
+    <span id="saudacaoUsuario" class="saudacao"></span>
+    <a href="#" class="header-link btn-light" id="btnToggleCart">Minha lista (<span id="count">0</span>)</a>
+    <a href="pages/login.html" id="loginLink" class="header-link btn-light">Login</a>
+    <a href="pages/cadastro.html" id="cadastroLink" class="header-link btn-primary">Cadastrar</a>
+    <a href="#" id="logoutLink" class="header-link btn-light logout" style="display: none;" title="Sair" aria-label="Sair">
+        <svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px; height:16px;">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <path d="M16 17l5-5-5-5"></path>
+            <path d="M21 12H9"></path>
+        </svg>
+        Sair
+    </a>
+</div>
+
+<div class="app-main">
+
+    <div class="sidebar">
+        <a href="pages/cadastro-roupa.html" class="user-icon" title="Anunciar roupa">👕</a>
+        <a href="pages/perfil.html" class="user-icon" title="Meu Perfil">👤</a>
+        <a href="pages/admin-logs.html" class="user-icon admin-only" title="Logs do Sistema" style="display: none;">📋</a>
+        <a href="pages/admin-usuarios.html" class="user-icon admin-only" title="Gerenciar Usuários" style="display: none;">👥</a>
+    </div>
+
+    <div class="content">
+
+        <div class="topbar">
+            <div class="filters">
+                <select id="filtroTamanho">
+                    <option value="">Tamanho</option>
+                    <option value="PP">PP</option>
+                    <option value="P">P</option>
+                    <option value="M">M</option>
+                    <option value="G">G</option>
+                    <option value="GG">GG</option>
+                    <option value="XG">XG</option>
+                </select>
+
+                <select id="filtroPeca">
+                    <option value="">Peça</option>
+                    <option value="Camiseta">Camiseta</option>
+                    <option value="Calça">Calça</option>
+                    <option value="Jaqueta">Jaqueta</option>
+                    <option value="Blusa">Blusa</option>
+                </select>
+
+                <select id="filtroSexo">
+                    <option value="">Sexo</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Feminino">Feminino</option>
+                    <option value="Unissex">Unissex</option>
+                </select>
+            </div>
+
+            <input type="text" id="buscaText" placeholder="Buscar...">
+        </div>
+
+        <div class="grid" id="roupasGrid">
+            <p class="empty-state">Carregando roupas...</p>
+        </div>
+
+    </div>
+</div>
+
+<div class="cart" id="cart">
+    <h3>Minha lista</h3>
+    <div id="cartItems"></div>
+    <button type="button" id="finalizarBtn" class="btn-block" disabled>Finalizar doação</button>
+</div>
+
+<!-- API Backend integration script -->
+<script type="module">
+    import { api, auth } from './assets/js/api.js';
+
+    let cart = [];
+    let roupas = [];
+    let usuarioLogado = false;
+    let adminLogado = false;
+
+    const saudacaoUsuario = document.getElementById("saudacaoUsuario");
+    const linksAdmin = document.querySelectorAll(".admin-only");
+    const roupasGrid = document.getElementById("roupasGrid");
+    const loginLink = document.getElementById("loginLink");
+    const cadastroLink = document.getElementById("cadastroLink");
+    const logoutLink = document.getElementById("logoutLink");
+    const finalizarBtn = document.getElementById("finalizarBtn");
+    const btnToggleCart = document.getElementById("btnToggleCart");
+
+    // Configura botões de evento do carrinho
+    btnToggleCart.addEventListener("click", (e) => {
+        e.preventDefault();
+        toggleCart();
+    });
+
+    logoutLink.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (confirm("Tem certeza que deseja sair?")) {
+            await api.logout();
+            window.location.reload();
+        }
+    });
+
+    finalizarBtn.addEventListener("click", () => {
+        irParaFinalizacao();
+    });
+
+    function toggleCart() {
+        document.getElementById("cart").classList.toggle("active");
+    }
+
+    function atualizarLinksAdmin(isAdmin) {
+        linksAdmin.forEach((link) => {
+            link.style.display = isAdmin ? "flex" : "none";
+        });
+    }
+
+    function atualizarHeader(logado, admin, nome) {
+        usuarioLogado = logado;
+        adminLogado = admin;
+        loginLink.style.display = logado ? "none" : "block";
+        cadastroLink.style.display = logado ? "none" : "block";
+        logoutLink.style.display = logado ? "inline-flex" : "none";
+
+        if (logado && nome) {
+            saudacaoUsuario.textContent = admin ? `Olá admin, ${nome}` : `Olá, ${nome}`;
+            saudacaoUsuario.classList.add("is-visible");
+        } else {
+            saudacaoUsuario.textContent = "";
+            saudacaoUsuario.classList.remove("is-visible");
+        }
+
+        atualizarLinksAdmin(admin);
+    }
+
+    async function carregarUsuarioLogado() {
+        if (auth.estaLogado()) {
+            const payload = auth.decodificarPayload();
+            if (payload) {
+                atualizarHeader(true, payload.admin === true, payload.nome);
+                return;
+            }
+        }
+        atualizarHeader(false, false, "");
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function addItem(id) {
+        const roupa = roupas.find((item) => Number(item.id) === Number(id));
+        if (!roupa || Number(roupa.pausado) === 1) return;
+
+        if (cart.some((item) => Number(item.id) === Number(id))) {
+            return;
+        }
+
+        cart.push(roupa);
+        renderCart();
+        atualizarBotoesCarrinho();
+    }
+
+    function removeItem(index) {
+        cart.splice(index, 1);
+        renderCart();
+        atualizarBotoesCarrinho();
+    }
+
+    function renderCart() {
+        let html = "";
+
+        cart.forEach((item, i) => {
+            html += `
+                <div class="cart-item">
+                    <span>${escapeHtml(item.titulo || item.tipo)} - ${escapeHtml(item.local_doacao || "Local não informado")}</span>
+                    <button class="btn-remove-cart" data-index="${i}">X</button>
+                </div>
+            `;
+        });
+
+        if (cart.length === 0) {
+            html = `<p class="empty-state">Nenhuma roupa selecionada.</p>`;
+        }
+
+        document.getElementById("cartItems").innerHTML = html;
+        document.getElementById("count").innerText = cart.length;
+        finalizarBtn.disabled = cart.length === 0;
+
+        // Adiciona listeners para os botões de remover do carrinho
+        document.querySelectorAll(".btn-remove-cart").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                removeItem(Number(btn.dataset.index));
+            });
+        });
+    }
+
+    const filtroTamanho = document.getElementById("filtroTamanho");
+    const filtroPeca = document.getElementById("filtroPeca");
+    const filtroSexo = document.getElementById("filtroSexo");
+    const buscaText = document.getElementById("buscaText");
+
+    function renderizarRoupas(lista) {
+        if (lista.length === 0) {
+            roupasGrid.innerHTML = `<p class="empty-state">Nenhuma roupa cadastrada ainda.</p>`;
+            return;
+        }
+
+        // Endpoint base para exibir imagens
+        const API_UPLOADS_BASE = 'http://localhost:8001/';
+
+        roupasGrid.innerHTML = lista.map((roupa) => {
+            const pausado = Number(roupa.pausado) === 1;
+            const noCarrinho = cart.some((item) => Number(item.id) === Number(roupa.id));
+            const imgSrc = roupa.foto_path ? (roupa.foto_path.startsWith('http') ? roupa.foto_path : `${API_UPLOADS_BASE}${roupa.foto_path}`) : '';
+
+            return `
+            <div class="item" data-id="${Number(roupa.id)}" data-tamanho="${escapeHtml(roupa.tamanho || "")}" data-tipo="${escapeHtml(roupa.tipo || "")}" data-sexo="${escapeHtml(roupa.sexo || "")}" data-local="${escapeHtml(roupa.local_doacao || "")}" data-busca="${escapeHtml(`${roupa.titulo || ""} ${roupa.tipo || ""} ${roupa.tamanho || ""} ${roupa.sexo || ""} ${roupa.estado || ""} ${roupa.local_doacao || ""}`)}">
+                <div class="img-box">
+                    ${imgSrc ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(roupa.titulo || roupa.tipo)}" class="item-photo">` : "Sem foto"}
+                    ${pausado ? `<span class="paused-badge">Anúncio pausado</span>` : ""}
+                </div>
+                <div class="item-info">
+                    <div class="item-info-row">
+                        <div class="item-details">
+                            <strong>${escapeHtml(roupa.titulo || roupa.tipo)}</strong>
+                            <small>${escapeHtml(roupa.tipo || "-")}</small>
+                            <small>Tam ${escapeHtml(roupa.tamanho || "-")} • ${escapeHtml(roupa.sexo || "-")} • ${escapeHtml(roupa.estado || "-")}</small>
+                            <small class="item-location">Local: ${escapeHtml(roupa.local_doacao || "Não informado")}</small>
+                        </div>
+                        <button type="button" class="cart-add-btn btn-add-item" data-id="${Number(roupa.id)}" ${pausado || noCarrinho ? "disabled" : ""} title="Adicionar à lista" aria-label="Adicionar à lista">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.6L23 6H6"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    ${adminLogado ? `
+                        <div class="admin-item-actions">
+                            <button type="button" class="btn-danger btn-small btn-excluir-anuncio" data-id="${Number(roupa.id)}">Excluir</button>
+                        </div>
+                    ` : ""}
+                </div>
+            </div>
+            `;
+        }).join("");
+
+        // Vincula eventos nos elementos do grid
+        document.querySelectorAll(".btn-add-item").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                addItem(Number(btn.dataset.id));
+            });
+        });
+
+        document.querySelectorAll(".btn-excluir-anuncio").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                excluirAnuncio(Number(btn.dataset.id));
+            });
+        });
+
+        atualizarBotoesCarrinho();
+    }
+
+    async function carregarRoupas() {
+        try {
+            const resposta = await api.listarRoupas();
+            roupas = resposta.success ? resposta.roupas : [];
+            renderizarRoupas(roupas);
+            aplicarFiltros();
+        } catch (erro) {
+            console.error("Não foi possível carregar as roupas:", erro);
+            roupasGrid.innerHTML = `<p class="empty-state">Não foi possível carregar as roupas.</p>`;
+        }
+    }
+
+    function aplicarFiltros() {
+        const items = document.querySelectorAll("#roupasGrid .item");
+        const valTamanho = filtroTamanho.value.toLowerCase();
+        const valPeca = filtroPeca.value.toLowerCase();
+        const valSexo = filtroSexo.value.toLowerCase();
+        const valBusca = buscaText.value.toLowerCase();
+
+        items.forEach(item => {
+            const tamanho = item.dataset.tamanho.toLowerCase();
+            const tipo = item.dataset.tipo.toLowerCase();
+            const sexo = item.dataset.sexo.toLowerCase();
+            const busca = item.dataset.busca.toLowerCase();
+            let exibir = true;
+
+            if (valTamanho !== "" && tamanho !== valTamanho) {
+                exibir = false;
+            }
+            
+            if (valPeca !== "" && tipo !== valPeca) {
+                exibir = false;
+            }
+
+            if (valSexo !== "" && sexo !== valSexo) {
+                exibir = false;
+            }
+
+            if (valBusca !== "" && !busca.includes(valBusca)) {
+                exibir = false;
+            }
+
+            item.style.display = exibir ? "" : "none";
+        });
+    }
+
+    filtroTamanho.addEventListener("change", aplicarFiltros);
+    filtroPeca.addEventListener("change", aplicarFiltros);
+    filtroSexo.addEventListener("change", aplicarFiltros);
+    buscaText.addEventListener("input", aplicarFiltros);
+
+    function atualizarBotoesCarrinho() {
+        document.querySelectorAll(".btn-add-item").forEach((button) => {
+            const id = Number(button.dataset.id);
+            const roupa = roupas.find((item) => Number(item.id) === id);
+            const pausado = roupa && Number(roupa.pausado) === 1;
+            const noCarrinho = cart.some((item) => Number(item.id) === id);
+            button.disabled = pausado || noCarrinho;
+        });
+    }
+
+    async function excluirAnuncio(id) {
+        if (!adminLogado || !confirm("Excluir este anúncio?")) {
+            return;
+        }
+
+        try {
+            const resposta = await api.excluirRoupa(id);
+
+            if (!resposta.success) {
+                alert(resposta.mensagem || "Não foi possível excluir o anúncio.");
+                return;
+            }
+
+            roupas = roupas.filter((roupa) => Number(roupa.id) !== Number(id));
+            cart = cart.filter((roupa) => Number(roupa.id) !== Number(id));
+            renderizarRoupas(roupas);
+            renderCart();
+            aplicarFiltros();
+        } catch (erro) {
+            console.error(erro);
+            alert("Erro ao excluir o anúncio.");
+        }
+    }
+
+    function irParaFinalizacao() {
+        if (cart.length === 0) {
+            return;
+        }
+
+        const ids = cart.map((item) => Number(item.id)).join(",");
+        window.location.href = `pages/finalizar-doacao.html?ids=${encodeURIComponent(ids)}`;
+    }
+
+    // Inicialização
+    await carregarUsuarioLogado();
+    await carregarRoupas();
+</script>
+<script src="assets/js/cookies.js"></script>
+</body>
+</html>

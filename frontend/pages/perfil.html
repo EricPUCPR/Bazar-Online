@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Meu Perfil</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+        .profile-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 12px;
+            background-color: #f0f4f8; 
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .btn-deletar-campo {
+            background: none;
+            border: none;
+            color: #ff4d4d;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            padding-left: 10px;
+        }
+        .btn-deletar-campo:hover {
+            color: #ff0000;
+            font-weight: bold;
+        }
+        .admin-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dashed var(--color-border);
+        }
+    </style>
+</head>
+
+<body class="profile-page">
+
+<div class="app-header">
+    <a href="../index.html" class="header-link btn-primary">Voltar</a>
+    <a href="#" id="logoutLink" class="header-link btn-light logout">
+        <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px;">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <path d="M16 17l5-5-5-5"></path>
+            <path d="M21 12H9"></path>
+        </svg>
+        Sair
+    </a>
+</div>
+
+<div class="page-main">
+    <div class="box">
+        <h2>Meu Perfil</h2>
+        <p id="feedback"></p>
+        
+        <div id="profileLoading">Carregando informações do perfil...</div>
+
+        <div id="profileContent" style="display: none;">
+            <div class="profile-info">
+                <span><b>Nome:</b> <span id="lblNome"></span></span>
+            </div>
+
+            <div class="profile-info">
+                <span><b>E-mail:</b> <span id="lblEmail"></span></span>
+            </div>
+
+            <div class="profile-info">
+                <span><b>Telefone:</b> <span id="lblTelefone"></span></span>
+                <button id="btnDelTelefone" class="btn-deletar-campo" style="display: none;" title="Excluir telefone">❌</button>
+            </div>
+
+            <div class="profile-info">
+                <span><b>Endereço:</b> <span id="lblEndereco"></span></span>
+                <button id="btnDelEndereco" class="btn-deletar-campo" style="display: none;" title="Excluir endereço">❌</button>
+            </div>
+
+            <div class="profile-info">
+                <span><b>Nascimento:</b> <span id="lblNascimento"></span></span>
+                <button id="btnDelNascimento" class="btn-deletar-campo" style="display: none;" title="Excluir data de nascimento">❌</button>
+            </div>
+
+            <!-- Seção exclusiva para administradores -->
+            <div id="adminArea" class="admin-section" style="display: none;">
+                <h3>Segurança do Administrador</h3>
+
+                <div class="profile-info">
+                    <span><b>Telegram Chat ID atual:</b> <span id="lblTelegramChatId"></span></span>
+                </div>
+
+                <form id="formTelegram" style="margin-bottom: 20px;">
+                    <label for="telegram_chat_id">Vincular Telegram (para 2FA)</label>
+                    <input type="text" id="telegram_chat_id" name="telegram_chat_id" placeholder="Digite seu Chat ID do Telegram">
+                    <button type="submit" class="btn btn-block">Salvar Telegram</button>
+                </form>
+
+                <form id="formPergunta">
+                    <label for="pergunta_seguranca">Pergunta de segurança</label>
+                    <select id="pergunta_seguranca" name="pergunta_seguranca" required>
+                        <option value="">Selecione uma pergunta</option>
+                        <option value="Qual o nome do seu primeiro animal?">Qual o nome do seu primeiro animal?</option>
+                        <option value="Qual a cidade onde você nasceu?">Qual a cidade onde você nasceu?</option>
+                        <option value="Qual o nome da sua escola de infância?">Qual o nome da sua escola de infância?</option>
+                        <option value="Qual o nome da sua mãe?">Qual o nome da sua mãe?</option>
+                        <option value="Qual foi seu primeiro videogame?">Qual foi seu primeiro videogame?</option>
+                    </select>
+
+                    <label for="resposta_seguranca">Resposta</label>
+                    <input type="password" id="resposta_seguranca" name="resposta_seguranca" placeholder="Digite a resposta" required>
+
+                    <button type="submit" class="btn btn-block">Salvar pergunta</button>
+                </form>
+            </div>
+
+            <!-- Seção para usuários comuns -->
+            <div id="userArea" style="display: none; margin-top: 20px;">
+                <button id="btnExcluirConta" class="btn btn-block btn-danger">Excluir minha conta</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { api, auth } from '../assets/js/api.js';
+
+    // Redireciona se não estiver logado
+    if (!auth.estaLogado()) {
+        window.location.href = "login.html";
+    }
+
+    const logoutLink = document.getElementById("logoutLink");
+    const feedback = document.getElementById("feedback");
+    const profileLoading = document.getElementById("profileLoading");
+    const profileContent = document.getElementById("profileContent");
+
+    const lblNome = document.getElementById("lblNome");
+    const lblEmail = document.getElementById("lblEmail");
+    const lblTelefone = document.getElementById("lblTelefone");
+    const lblEndereco = document.getElementById("lblEndereco");
+    const lblNascimento = document.getElementById("lblNascimento");
+
+    const btnDelTelefone = document.getElementById("btnDelTelefone");
+    const btnDelEndereco = document.getElementById("btnDelEndereco");
+    const btnDelNascimento = document.getElementById("btnDelNascimento");
+
+    const adminArea = document.getElementById("adminArea");
+    const userArea = document.getElementById("userArea");
+    const lblTelegramChatId = document.getElementById("lblTelegramChatId");
+    const telegramInput = document.getElementById("telegram_chat_id");
+    const perguntaSelect = document.getElementById("pergunta_seguranca");
+
+    const formTelegram = document.getElementById("formTelegram");
+    const formPergunta = document.getElementById("formPergunta");
+    const btnExcluirConta = document.getElementById("btnExcluirConta");
+
+    logoutLink.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (confirm("Tem certeza que deseja sair?")) {
+            await api.logout();
+            window.location.href = "../index.html";
+        }
+    });
+
+    function setFeedback(message, status = "muted") {
+        feedback.className = `feedback feedback-${status}`;
+        feedback.textContent = message;
+    }
+
+    async function carregarPerfil() {
+        try {
+            const response = await api.obterPerfil();
+
+            if (response && response.success) {
+                const user = response.perfil;
+
+                lblNome.textContent = user.nome;
+                lblEmail.textContent = user.email;
+
+                lblTelefone.textContent = user.telefone || "Não informado";
+                btnDelTelefone.style.display = user.telefone ? "inline" : "none";
+
+                lblEndereco.textContent = user.endereco || "Não informado";
+                btnDelEndereco.style.display = user.endereco ? "inline" : "none";
+
+                lblNascimento.textContent = user.data_nascimento || "Não informado";
+                btnDelNascimento.style.display = user.data_nascimento ? "inline" : "none";
+
+                if (user.is_admin) {
+                    adminArea.style.display = "block";
+                    userArea.style.display = "none";
+                    lblTelegramChatId.textContent = user.telegram_chat_id || "Não vinculado";
+                    telegramInput.value = user.telegram_chat_id || "";
+                    perguntaSelect.value = user.pergunta_seguranca || "";
+                } else {
+                    adminArea.style.display = "none";
+                    userArea.style.display = "block";
+                }
+
+                profileLoading.style.display = "none";
+                profileContent.style.display = "block";
+            } else {
+                setFeedback("Erro ao carregar o perfil do usuário.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    }
+
+    // Configura botões de exclusão de campos
+    async function excluirCampo(campo) {
+        if (!confirm(`Tem certeza que deseja excluir seu ${campo === 'data_nascimento' ? 'nascimento' : campo}?`)) {
+            return;
+        }
+
+        try {
+            const response = await api.excluirCampoPerfil(campo);
+            if (response.success) {
+                setFeedback(response.mensagem || "Campo excluído com sucesso.", "success");
+                carregarPerfil();
+            } else {
+                setFeedback(response.mensagem || "Erro ao excluir campo.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    }
+
+    btnDelTelefone.addEventListener("click", () => excluirCampo("telefone"));
+    btnDelEndereco.addEventListener("click", () => excluirCampo("endereco"));
+    btnDelNascimento.addEventListener("click", () => excluirCampo("data_nascimento"));
+
+    // Configura formulário do Telegram (Admin)
+    formTelegram.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setFeedback("Carregando...");
+
+        try {
+            const response = await api.atualizarTelegram(telegramInput.value.trim());
+            if (response.success) {
+                setFeedback(response.mensagem || "Telegram atualizado com sucesso.", "success");
+                carregarPerfil();
+            } else {
+                setFeedback(response.mensagem || "Erro ao atualizar Telegram.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+
+    // Configura formulário de Pergunta de Segurança (Admin)
+    formPergunta.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setFeedback("Carregando...");
+
+        const resposta = document.getElementById("resposta_seguranca");
+
+        try {
+            const response = await api.atualizarPerguntaSeguranca(perguntaSelect.value, resposta.value.trim());
+            if (response.success) {
+                setFeedback(response.mensagem || "Pergunta configurada com sucesso.", "success");
+                resposta.value = "";
+                carregarPerfil();
+            } else {
+                setFeedback(response.mensagem || "Erro ao configurar pergunta.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+
+    // Configura botão de exclusão de conta
+    btnExcluirConta.addEventListener("click", async () => {
+        if (!confirm("TEM CERTEZA QUE DESEJA EXCLUIR SUA CONTA? Esta ação é irreversível e apagará todos os seus dados.")) {
+            return;
+        }
+
+        setFeedback("Excluindo conta...", "muted");
+
+        try {
+            const response = await api.excluirConta();
+            if (response.success) {
+                alert(response.mensagem || "Sua conta foi excluída com sucesso.");
+                auth.limparToken();
+                window.location.href = "../index.html";
+            } else {
+                setFeedback(response.mensagem || "Erro ao excluir conta.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+
+    // Inicialização
+    carregarPerfil();
+</script>
+
+</body>
+</html>

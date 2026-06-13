@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Cadastro</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+        #requisitos {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px;
+            margin-top: 10px;
+            background: var(--color-field);
+            border-radius: 6px;
+            text-align: left;
+            font-size: 13px;
+        }
+        #requisitos.is-visible {
+            display: flex;
+        }
+        #requisitos span.ok {
+            color: var(--color-success);
+            font-weight: 600;
+        }
+        #requisitos span.erro {
+            color: var(--color-danger);
+        }
+        .captcha-container {
+            display: none;
+            justify-content: center;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body class="auth-page">
+
+<div class="app-header">
+    <a href="login.html" class="header-link btn-light">Login</a>
+    <a href="../index.html" class="header-link btn-primary">Voltar</a>
+</div>
+
+<div class="page-main">
+    <div class="box">
+        <h2>Cadastro</h2>
+
+        <form id="formCadastro">
+            <input type="text" id="nome" name="nome" placeholder="Nome completo" pattern="[a-zA-ZÀ-ÿ\s]{,}"
+                title="O nome deve conter apenas letras e ter no mínimo 8 caracteres." required>
+            
+            <input type="email" name="email" id="email" placeholder="E-mail" pattern="[a-zA-Z0-9._]+@[a-zA-Z]+(\.[a-zA-Z]+)+"
+                title="O formato do e-mail é inválido." required>
+            
+            <input type="date" name="datanascimento" id="datanascimento" required>
+            
+            <input type="tel" id="telefone" name="telefone" placeholder="Telefone" inputmode="numeric" maxlength="15" required>
+            
+            <input type="text" name="endereco" id="endereco" placeholder="Endereço" required>
+
+            <div class="password-wrapper">
+                <input type="password" id="senha" name="senha" placeholder="Senha" required>
+                <button type="button" class="toggle-password" id="btnToggleSenha" aria-label="Visualizar senha">👁</button>
+            </div>
+
+            <div class="password-wrapper">
+                <input type="password" id="confirmar_senha" name="confirmar_senha" placeholder="Confirmar senha" required>
+                <button type="button" class="toggle-password" id="btnToggleConfirmar" aria-label="Visualizar confirmar senha">👁</button>
+            </div>
+
+            <div id="requisitos">
+                <span id="r1" class="erro">• No mínimo 8 caracteres</span>
+                <span id="r2" class="erro">• 1 Letra maiúscula</span>
+                <span id="r3" class="erro">• 1 Letra minúscula</span>
+                <span id="r4" class="erro">• 1 Número</span>
+                <span id="r5" class="erro">• 1 Símbolo</span>
+                <span id="r6" class="erro">• Não é permitida sequência numérica</span>
+                <span id="r7" class="erro">• Não é permitido nome próprio</span>
+            </div>
+
+            <div class="terms-check">
+                <label>
+                    <input type="checkbox" id="termos" name="termos" required>
+                    Eu aceito os <a href="legal/terms/index.html" target="_blank">termos de uso</a>
+                </label>
+            </div>
+
+            <span id="feedback"></span>
+
+            <div id="captchaArea" class="captcha-container">
+                <div class="g-recaptcha" data-sitekey="6Lcamd4sAAAAAEseD4staAT6zmmpzOcRjGET8Ekn"></div>
+            </div>
+
+            <button type="submit" class="btn-block" style="margin-top: 15px;">Cadastrar</button>
+        </form>
+
+        <a href="login.html" class="form-link">Já tenho cadastro</a>
+    </div>
+</div>
+
+<script type="module">
+    import { api } from '../assets/js/api.js';
+
+    const senha = document.getElementById("senha");
+    const confirmarSenha = document.getElementById("confirmar_senha");
+    const requisitos = document.getElementById("requisitos");
+    const telefone = document.getElementById("telefone");
+    const nome = document.getElementById("nome");
+    const termos = document.getElementById("termos");
+    const form = document.getElementById("formCadastro");
+    const captchaArea = document.getElementById("captchaArea");
+    const feedback = document.getElementById("feedback");
+
+    const btnToggleSenha = document.getElementById("btnToggleSenha");
+    const btnToggleConfirmar = document.getElementById("btnToggleConfirmar");
+
+    // Configura datas limites para aniversário (18 a 120 anos)
+    const dt = new Date();
+    const maxYear = dt.getFullYear() - 18;
+    const minYear = dt.getFullYear() - 120;
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+
+    const datanascimento = document.getElementById("datanascimento");
+    datanascimento.max = `${maxYear}-${month}-${day}`;
+    datanascimento.min = `${minYear}-${month}-${day}`;
+
+    // Mostra/Oculta senhas
+    function setupTogglePassword(btn, targetId) {
+        btn.addEventListener("click", () => {
+            const campo = document.getElementById(targetId);
+            if (campo.type === "password") {
+                campo.type = "text";
+                btn.textContent = "🙈";
+            } else {
+                campo.type = "password";
+                btn.textContent = "👁";
+            }
+        });
+    }
+    setupTogglePassword(btnToggleSenha, "senha");
+    setupTogglePassword(btnToggleConfirmar, "confirmar_senha");
+
+    function setFeedback(message, status = "muted") {
+        feedback.className = `feedback feedback-${status}`;
+        feedback.textContent = message;
+    }
+
+    function normalizarTexto(texto) {
+        texto = trimString(texto).toLowerCase();
+        texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return texto.replace(/[^a-z0-9 ]/g, "");
+    }
+
+    function trimString(str) {
+        return String(str ?? "").trim();
+    }
+
+    function validarCaptchaVisibilidade() {
+        const val = senha.value;
+        const senhaNormalizada = normalizarTexto(val).replace(/\s/g, "");
+
+        const partesNome = normalizarTexto(nome.value)
+            .split(/\s+/)
+            .filter((parte) => parte.length >= 3);
+
+        const temSequenciaNumerica = /(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)/.test(val);
+        const contemNome = partesNome.some((parte) => senhaNormalizada.includes(parte));
+
+        const checks = [
+            val.length >= 8,
+            /[A-Z]/.test(val),
+            /[a-z]/.test(val),
+            /\d/.test(val),
+            /[@$!%*?&]/.test(val),
+            !temSequenciaNumerica,
+            !contemNome
+        ];
+
+        const senhasConferem = (val === confirmarSenha.value && val !== "");
+        const requisitosSenhaOk = checks.every(c => c);
+        const formValido = form.checkValidity();
+
+        if (formValido && senhasConferem && requisitosSenhaOk && termos.checked) {
+            captchaArea.style.display = "flex";
+        } else {
+            captchaArea.style.display = "none";
+        }
+
+        return checks;
+    }
+
+    senha.addEventListener("input", () => {
+        const val = senha.value;
+        const checks = validarCaptchaVisibilidade();
+
+        if (val.length === 0 || checks.every(c => c)) {
+            requisitos.classList.remove("is-visible");
+        } else {
+            requisitos.classList.add("is-visible");
+        }
+
+        document.getElementById("r1").className = checks[0] ? "ok" : "erro";
+        document.getElementById("r2").className = checks[1] ? "ok" : "erro";
+        document.getElementById("r3").className = checks[2] ? "ok" : "erro";
+        document.getElementById("r4").className = checks[3] ? "ok" : "erro";
+        document.getElementById("r5").className = checks[4] ? "ok" : "erro";
+        document.getElementById("r6").className = checks[5] ? "ok" : "erro";
+        document.getElementById("r7").className = checks[6] ? "ok" : "erro";
+    });
+
+    nome.addEventListener("input", () => {
+        senha.dispatchEvent(new Event("input"));
+        validarCaptchaVisibilidade();
+    });
+
+    confirmarSenha.addEventListener("input", validarCaptchaVisibilidade);
+    termos.addEventListener("change", validarCaptchaVisibilidade);
+    
+    form.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', validarCaptchaVisibilidade);
+    });
+
+    telefone.addEventListener("input", () => {
+        let valor = telefone.value.replace(/\D/g, "").slice(0, 11);
+
+        if (valor.length > 2) {
+            valor = `(${valor.slice(0, 2)}) ${valor.slice(2)}`;
+        }
+        if (valor.length > 10) {
+            valor = `${valor.slice(0, 10)}-${valor.slice(10)}`;
+        }
+
+        telefone.value = valor;
+    });
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // Garante captcha marcado
+        if (captchaArea.style.display === "flex") {
+            const captchaResponse = grecaptcha.getResponse();
+            if (captchaResponse.length === 0) {
+                setFeedback("Por favor, marque o captcha.", "error");
+                return;
+            }
+        }
+
+        setFeedback("Carregando...");
+        form.classList.add('was-validated');
+
+        try {
+            const formData = new FormData(form);
+            const response = await api.cadastrar(formData);
+
+            if (response.success) {
+                setFeedback(response.mensagem || "Cadastro pendente. Verifique seu e-mail.", "success");
+                setTimeout(() => {
+                    window.location.href = "login.html?status=confirmacao_cadastro_enviada";
+                }, 2000);
+            } else {
+                setFeedback(response.mensagem || "Não foi possível cadastrar.", "error");
+                grecaptcha.reset();
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+
+    // Estado inicial
+    senha.dispatchEvent(new Event("input"));
+</script>
+
+</body>
+</html>

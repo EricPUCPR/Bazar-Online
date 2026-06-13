@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Gerenciar Usuários</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/app.css">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+        .admin-page {
+            background-color: var(--color-body);
+        }
+        .table-search {
+            margin-bottom: 20px;
+        }
+        .table-search input {
+            max-width: 320px;
+            float: right;
+        }
+    </style>
+</head>
+
+<body class="store-page admin-page">
+
+<div class="app-header">
+    <a href="../../index.html" style="margin-right: auto; color: white; font-weight: 700; font-size: 20px; text-decoration: none;">Bazar Admin</a>
+    <a href="logs.html" class="header-link btn-light">Logs do Sistema</a>
+    <a href="../perfil.html" class="header-link btn-light">Meu Perfil</a>
+    <a href="../../index.html" class="header-link btn-primary">Voltar</a>
+</div>
+
+<div class="app-main">
+    <div class="content" style="padding: 24px;">
+        <div class="admin-panel" style="width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                <h2>Gerenciar Usuários</h2>
+                <div class="table-search" style="margin: 0;">
+                    <input type="text" id="userSearchInput" placeholder="Pesquisar usuários...">
+                </div>
+            </div>
+
+            <p id="feedback"></p>
+
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>E-mail</th>
+                            <th>Nível de Acesso</th>
+                            <th style="text-align: center;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="5" class="admin-empty">Carregando usuários...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { api, auth } from '../../assets/js/api.js';
+
+    // Redireciona se não for administrador
+    if (!auth.estaLogado() || !auth.eAdmin()) {
+        window.location.href = "../login.html";
+    }
+
+    const usersTableBody = document.getElementById("usersTableBody");
+    const feedback = document.getElementById("feedback");
+    const userSearchInput = document.getElementById("userSearchInput");
+
+    let allUsers = [];
+
+    function setFeedback(message, status = "muted") {
+        feedback.className = `feedback feedback-${status}`;
+        feedback.textContent = message;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    async function carregarUsuarios() {
+        try {
+            const response = await api.adminListarUsuarios();
+
+            if (response.success) {
+                allUsers = response.usuarios || [];
+                renderizarUsuarios();
+            } else {
+                setFeedback(response.mensagem || "Erro ao listar usuários.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    }
+
+    function renderizarUsuarios() {
+        const query = userSearchInput.value.toLowerCase().trim();
+        const filteredUsers = allUsers.filter(user => 
+            (user.nome || "").toLowerCase().includes(query) ||
+            (user.email || "").toLowerCase().includes(query) ||
+            (String(user.id) === query)
+        );
+
+        if (filteredUsers.length === 0) {
+            usersTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="admin-empty">Nenhum usuário encontrado.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        usersTableBody.innerHTML = filteredUsers.map(user => {
+            const isAdmin = Number(user.is_admin) === 1;
+            const accessBadge = isAdmin 
+                ? `<span class="admin-badge" style="background: var(--color-brand-dark); color: #fff;">Administrador</span>` 
+                : `<span class="admin-badge">Doador Comum</span>`;
+
+            const actionButtons = isAdmin 
+                ? `<small class="empty-state">Sem ações disponíveis</small>` 
+                : `
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <button type="button" class="btn-primary btn-small btn-promover" data-id="${user.id}">Promover a Admin</button>
+                        <button type="button" class="btn-danger btn-small btn-remover" data-id="${user.id}">Remover</button>
+                    </div>
+                `;
+
+            return `
+                <tr>
+                    <td><b>#${user.id}</b></td>
+                    <td>${escapeHtml(user.nome)}</td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td>${accessBadge}</td>
+                    <td style="text-align: center;">${actionButtons}</td>
+                </tr>
+            `;
+        }).join("");
+
+        // Vincula eventos nos botões de promoção
+        document.querySelectorAll(".btn-promover").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                promoverUsuario(Number(btn.dataset.id));
+            });
+        });
+
+        // Vincula eventos nos botões de remoção
+        document.querySelectorAll(".btn-remover").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                removerUsuario(Number(btn.dataset.id));
+            });
+        });
+    }
+
+    async function promoverUsuario(id) {
+        const user = allUsers.find(u => Number(u.id) === id);
+        if (!user || !confirm(`Deseja promover o usuário "${user.nome}" a Administrador?Esta ação não pode ser revertida.`)) {
+            return;
+        }
+
+        setFeedback("Processando promoção...", "muted");
+
+        try {
+            const response = await api.adminAcaoUsuario("promover", id);
+            if (response.success) {
+                setFeedback(response.mensagem || "Usuário promovido com sucesso.", "success");
+                carregarUsuarios();
+            } else {
+                setFeedback(response.mensagem || "Não foi possível promover o usuário.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    }
+
+    async function removerUsuario(id) {
+        const user = allUsers.find(u => Number(u.id) === id);
+        if (!user || !confirm(`TEM CERTEZA QUE DESEJA APAGAR permanentemente a conta de "${user.nome}"? Esta ação excluirá todos os dados do usuário.`)) {
+            return;
+        }
+
+        setFeedback("Processando remoção...", "muted");
+
+        try {
+            const response = await api.adminAcaoUsuario("remover", id);
+            if (response.success) {
+                setFeedback(response.mensagem || "Usuário removido com sucesso.", "success");
+                carregarUsuarios();
+            } else {
+                setFeedback(response.mensagem || "Não foi possível remover o usuário.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    }
+
+    userSearchInput.addEventListener("input", renderizarUsuarios);
+
+    // Inicialização
+    carregarUsuarios();
+</script>
+
+</body>
+</html>
