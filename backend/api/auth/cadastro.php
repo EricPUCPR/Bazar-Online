@@ -179,7 +179,7 @@ if ($idExistente && $jaVerificado === 0) {
         VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
     ");
     if (!$stmt) {
-        echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar cadastro.']);
+        echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar cadastro.' . $conn->error]);
         exit;
     }
     $stmt->bind_param("ssssssss", $nome, $email, $telefone, $endereco, $datanascimento, $senhaHash, $tokenConfirmacao, $expiraConfirmacao);
