@@ -53,12 +53,13 @@ if ($action === 'solicitar') {
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT id FROM usuarios WHERE email = ? LIMIT 1");
+    $stmt = $conn->prepare("CALL sp_buscar_usuario_por_email(?)");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
     $existe  = $result && $result->num_rows > 0;
     $stmt->close();
+    while ($conn->next_result()) { }
 
     // Não revela se o e-mail existe ou não (proteção contra enumeration)
     if (!$existe) {
@@ -69,10 +70,11 @@ if ($action === 'solicitar') {
     $token  = bin2hex(random_bytes(32));
     $expira = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-    $update = $conn->prepare("UPDATE usuarios SET recuperacao_token = ?, recuperacao_expira = ? WHERE email = ?");
-    $update->bind_param("sss", $token, $expira, $email);
+    $update = $conn->prepare("CALL sp_definir_token_recuperacao(?, ?, ?)");
+    $update->bind_param("sss", $email, $token, $expira);
     $update->execute();
     $update->close();
+    while ($conn->next_result()) { }
 
     $frontendOrigin = env_value('FRONTEND_ORIGIN', 'http://localhost:8000');
     $link = $frontendOrigin . '/pages/nova-senha.html?token=' . $token;
@@ -114,12 +116,13 @@ if ($action === 'redefinir') {
     }
 
     // Busca usuário pelo token
-    $stmt = $conn->prepare("SELECT id, nome FROM usuarios WHERE recuperacao_token = ? AND recuperacao_expira > NOW() LIMIT 1");
+    $stmt = $conn->prepare("CALL sp_buscar_usuario_por_token_recuperacao(?)");
     $stmt->bind_param("s", $token);
     $stmt->execute();
     $result  = $stmt->get_result();
     $usuario = $result ? $result->fetch_assoc() : null;
     $stmt->close();
+    while ($conn->next_result()) { }
 
     if (!$usuario) {
         echo json_encode(['success' => false, 'mensagem' => 'Link expirado ou inválido. Solicite um novo.']);
@@ -144,11 +147,12 @@ if ($action === 'redefinir') {
     }
 
     $senhaHash = password_hash($novaSenha, PASSWORD_DEFAULT);
-    $update = $conn->prepare("UPDATE usuarios SET senha = ?, recuperacao_token = NULL, recuperacao_expira = NULL WHERE recuperacao_token = ?");
-    $update->bind_param("ss", $senhaHash, $token);
+    $update = $conn->prepare("CALL sp_redefinir_senha(?, ?)");
+    $update->bind_param("ss", $token, $senhaHash);
     $ok = $update->execute();
     $afetadas = $update->affected_rows;
     $update->close();
+    while ($conn->next_result()) { }
 
     if ($ok && $afetadas > 0) {
         echo json_encode(['success' => true, 'mensagem' => 'Senha atualizada com sucesso! Faça login.']);

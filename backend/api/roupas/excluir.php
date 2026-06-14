@@ -42,7 +42,7 @@ db_ensure_roupa_schema($conn);
 
 // Recupera caminho da foto antes de deletar
 $fotoPath = null;
-$stmtFoto = $conn->prepare("SELECT foto_path FROM roupas WHERE id = ? LIMIT 1");
+$stmtFoto = $conn->prepare("CALL sp_buscar_foto_roupa(?)");
 if ($stmtFoto) {
     $stmtFoto->bind_param("i", $id);
     $stmtFoto->execute();
@@ -50,9 +50,10 @@ if ($stmtFoto) {
     $foto       = $resultFoto ? $resultFoto->fetch_assoc() : null;
     $fotoPath   = $foto['foto_path'] ?? null;
     $stmtFoto->close();
+    while ($conn->next_result()) { }
 }
 
-$stmt = $conn->prepare("DELETE FROM roupas WHERE id = ?");
+$stmt = $conn->prepare("CALL sp_excluir_roupa(?)");
 
 if (!$stmt) {
     echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar exclusão.']);
@@ -63,6 +64,7 @@ $stmt->bind_param("i", $id);
 $ok       = $stmt->execute();
 $afetadas = $stmt->affected_rows;
 $stmt->close();
+while ($conn->next_result()) { }
 
 // Remove arquivo de foto
 if ($ok && $afetadas > 0 && $fotoPath) {

@@ -31,7 +31,7 @@ if ($token === '') {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id FROM usuarios WHERE confirmacao_token = ? AND confirmacao_expira > NOW() LIMIT 1");
+$stmt = $conn->prepare("CALL sp_buscar_usuario_por_token_confirmacao(?)");
 if (!$stmt) {
     echo json_encode(['success' => false, 'mensagem' => 'Erro interno ao validar o e-mail.']);
     exit;
@@ -42,6 +42,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 $row    = $result ? $result->fetch_assoc() : null;
 $stmt->close();
+while ($conn->next_result()) { }
 
 if (!$row) {
     echo json_encode(['success' => false, 'mensagem' => 'Link de validação inválido ou expirado.']);
@@ -49,7 +50,7 @@ if (!$row) {
 }
 
 $idUsuario = (int) $row['id'];
-$update = $conn->prepare("UPDATE usuarios SET email_verificado = 1, confirmacao_token = NULL, confirmacao_expira = NULL WHERE id = ?");
+$update = $conn->prepare("CALL sp_confirmar_email(?)");
 
 if (!$update) {
     echo json_encode(['success' => false, 'mensagem' => 'Erro interno ao validar o e-mail.']);
@@ -59,6 +60,7 @@ if (!$update) {
 $update->bind_param("i", $idUsuario);
 $ok = $update->execute();
 $update->close();
+while ($conn->next_result()) { }
 
 if ($ok) {
     app_log_event('Validação de e-mail', 'Usuário validou o e-mail da conta.', $idUsuario);

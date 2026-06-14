@@ -102,11 +102,11 @@ if (!@move_uploaded_file($foto['tmp_name'], $destino)) {
     exit;
 }
 
-$stmt = $conn->prepare("INSERT INTO roupas (titulo, tipo, tamanho, sexo, estado, local_doacao, foto_path, id_usuario) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt = $conn->prepare("CALL sp_cadastrar_roupa(?, ?, ?, ?, ?, ?, ?, ?)");
 
 if (!$stmt) {
     @unlink($destino);
-    echo json_encode(['success' => false, 'mensagem' => 'Erro na preparação da query: ' . $conn->error]);
+    echo json_encode(['success' => false, 'mensagem' => 'Erro na preparação da query.']);
     exit;
 }
 
@@ -116,8 +116,9 @@ if ($stmt->execute()) {
     echo json_encode(['success' => true, 'mensagem' => 'Roupa cadastrada com sucesso!']);
 } else {
     @unlink($destino);
-    echo json_encode(['success' => false, 'mensagem' => 'Erro ao cadastrar roupa: ' . $stmt->error]);
+    echo json_encode(['success' => false, 'mensagem' => 'Erro ao cadastrar roupa.']);
 }
 
 $stmt->close();
+while ($conn->next_result()) { }
 $conn->close();

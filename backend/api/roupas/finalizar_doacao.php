@@ -59,27 +59,28 @@ db_ensure_roupa_schema($conn);
 db_ensure_usuario_schema($conn);
 
 // Busca dados do interessado (telefone)
-$stmtU = $conn->prepare("SELECT telefone FROM usuarios WHERE id = ? LIMIT 1");
+$stmtU = $conn->prepare("CALL sp_buscar_usuario_por_id(?)");
 $stmtU->bind_param("i", $userId);
 $stmtU->execute();
 $resU     = $stmtU->get_result();
 $userRow  = $resU ? $resU->fetch_assoc() : null;
 $stmtU->close();
+while ($conn->next_result()) { }
 $telefone = $userRow['telefone'] ?? 'Não informado';
 
 // Busca roupas
-$placeholders = implode(',', array_fill(0, count($ids), '?'));
-$stmtR = $conn->prepare("SELECT id, titulo, tipo, tamanho, sexo, estado, local_doacao, foto_path, id_usuario, pausado FROM roupas WHERE id IN ($placeholders)");
-$stmtR->bind_param(str_repeat('i', count($ids)), ...$ids);
-$stmtR->execute();
-$resR   = $stmtR->get_result();
 $roupas = [];
-if ($resR) {
-    while ($row = $resR->fetch_assoc()) {
+foreach ($ids as $id) {
+    $stmtR = $conn->prepare("CALL sp_buscar_roupa_por_id(?)");
+    $stmtR->bind_param("i", $id);
+    $stmtR->execute();
+    $resR = $stmtR->get_result();
+    if ($resR && $row = $resR->fetch_assoc()) {
         $roupas[] = $row;
     }
+    $stmtR->close();
+    while ($conn->next_result()) { }
 }
-$stmtR->close();
 
 $ativas = array_values(array_filter($roupas, fn($r) => (int) $r['pausado'] !== 1));
 
@@ -102,12 +103,13 @@ foreach ($ativas as $roupa) {
 $idsEnviados = [];
 
 foreach ($grupos as $anuncianteId => $roupasDoAnunciante) {
-    $stmtA = $conn->prepare("SELECT id, nome, email FROM usuarios WHERE id = ? LIMIT 1");
+    $stmtA = $conn->prepare("CALL sp_buscar_usuario_por_id(?)");
     $stmtA->bind_param("i", $anuncianteId);
     $stmtA->execute();
     $resA       = $stmtA->get_result();
     $anunciante = $resA ? $resA->fetch_assoc() : null;
     $stmtA->close();
+    while ($conn->next_result()) { }
 
     if (!$anunciante || empty($anunciante['email'])) {
         echo json_encode(['success' => false, 'mensagem' => 'Não foi possível encontrar o e-mail de um anunciante.']);
@@ -152,12 +154,12 @@ foreach ($grupos as $anuncianteId => $roupasDoAnunciante) {
 }
 
 // Pausa roupas enviadas
-if (count($idsEnviados) > 0) {
-    $ph = implode(',', array_fill(0, count($idsEnviados), '?'));
-    $stmtP = $conn->prepare("UPDATE roupas SET pausado = 1 WHERE id IN ($ph)");
-    $stmtP->bind_param(str_repeat('i', count($idsEnviados)), ...$idsEnviados);
+foreach ($idsEnviados as $idEnv) {
+    $stmtP = $conn->prepare("CALL sp_pausar_roupa(?)");
+    $stmtP->bind_param("i", $idEnv);
     $stmtP->execute();
     $stmtP->close();
+    while ($conn->next_result()) { }
 }
 
 $conn->close();

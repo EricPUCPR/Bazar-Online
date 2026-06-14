@@ -32,7 +32,7 @@ db_ensure_usuario_schema($conn);
 
 // ─── GET: listar usuários ────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $result   = $conn->query("SELECT id, nome, email, is_admin FROM usuarios ORDER BY id ASC");
+    $result   = $conn->query("CALL sp_listar_usuarios()");
     $usuarios = [];
     if ($result) {
         while ($row = $result->fetch_assoc()) {
@@ -60,12 +60,13 @@ if ($id <= 0) {
 }
 
 // Busca o usuário
-$stmtU = $conn->prepare("SELECT id, nome, email, is_admin FROM usuarios WHERE id = ? LIMIT 1");
+$stmtU = $conn->prepare("CALL sp_buscar_usuario_por_id(?)");
 $stmtU->bind_param("i", $id);
 $stmtU->execute();
 $resU    = $stmtU->get_result();
 $usuario = $resU ? $resU->fetch_assoc() : null;
 $stmtU->close();
+while ($conn->next_result()) { }
 
 if (!$usuario) {
     echo json_encode(['success' => false, 'mensagem' => 'Usuário não encontrado.']);
@@ -78,10 +79,11 @@ if ($action === 'promover') {
         exit;
     }
 
-    $stmt = $conn->prepare("UPDATE usuarios SET is_admin = 1 WHERE id = ?");
+    $stmt = $conn->prepare("CALL sp_promover_usuario(?)");
     $stmt->bind_param("i", $id);
     $ok = $stmt->execute();
     $stmt->close();
+    while ($conn->next_result()) { }
 
     if ($ok) {
         app_log_event('Promoção admin', 'Usuário promovido a admin.', $id, $usuario['nome'], $usuario['email']);
@@ -98,10 +100,11 @@ if ($action === 'remover') {
         exit;
     }
 
-    $stmt = $conn->prepare("DELETE FROM usuarios WHERE id = ?");
+    $stmt = $conn->prepare("CALL sp_excluir_conta(?)");
     $stmt->bind_param("i", $id);
     $ok = $stmt->execute();
     $stmt->close();
+    while ($conn->next_result()) { }
 
     if ($ok) {
         app_log_event('Remoção de usuário', 'Admin removeu um usuário.', $id, $usuario['nome'], $usuario['email']);

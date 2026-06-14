@@ -36,10 +36,11 @@ $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
 $offset = ($pagina - 1) * $limite;
 
 // Total
-$totalRes = $conn->query("SELECT COUNT(*) AS total FROM logs_sistema");
+$totalRes = $conn->query("CALL sp_contar_logs()");
 $total    = $totalRes ? (int) $totalRes->fetch_assoc()['total'] : 0;
+while ($conn->next_result()) { }
 
-$stmt = $conn->prepare("SELECT id, usuario_id, nome, email, acao, detalhes, criado_em FROM logs_sistema ORDER BY id DESC LIMIT ? OFFSET ?");
+$stmt = $conn->prepare("CALL sp_listar_logs_paginados(?, ?)");
 $stmt->bind_param("ii", $limite, $offset);
 $stmt->execute();
 $result = $stmt->get_result();

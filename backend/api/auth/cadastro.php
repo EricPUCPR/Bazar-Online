@@ -126,7 +126,7 @@ if (!validar_recaptcha($recaptcha)) {
 // Verifica e-mail existente
 $idExistente = null;
 $jaVerificado = 0;
-$stmtBusca = $conn->prepare("SELECT id, email_verificado FROM usuarios WHERE email = ? LIMIT 1");
+$stmtBusca = $conn->prepare("CALL sp_buscar_usuario_por_email(?)");
 if ($stmtBusca) {
     $stmtBusca->bind_param("s", $email);
     $stmtBusca->execute();
@@ -137,6 +137,7 @@ if ($stmtBusca) {
         $jaVerificado = (int) ($existente['email_verificado'] ?? 0);
     }
     $stmtBusca->close();
+    while ($conn->next_result()) { }
 }
 
 if ($idExistente && $jaVerificado === 1) {
@@ -156,39 +157,35 @@ $linkConfirmacao = $frontendOrigin . '/pages/confirmar-email.html?token=' . $tok
 
 if ($idExistente && $jaVerificado === 0) {
     // Reenvio para cadastro pendente
-    $stmt = $conn->prepare("
-        UPDATE usuarios
-        SET nome = ?, telefone = ?, endereco = ?, data_nascimento = ?,
-            senha = ?, confirmacao_token = ?, confirmacao_expira = ?
-        WHERE id = ?
-    ");
+    $stmt = $conn->prepare("CALL sp_atualizar_cadastro_pendente(?, ?, ?, ?, ?, ?, ?, ?)");
     if (!$stmt) {
         echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar atualização.']);
         exit;
     }
-    $stmt->bind_param("sssssssi", $nome, $telefone, $endereco, $datanascimento, $senhaHash, $tokenConfirmacao, $expiraConfirmacao, $idExistente);
+    $stmt->bind_param("isssssss", $idExistente, $nome, $telefone, $endereco, $datanascimento, $senhaHash, $tokenConfirmacao, $expiraConfirmacao);
     if (!$stmt->execute()) {
         echo json_encode(['success' => false, 'mensagem' => 'Erro ao atualizar cadastro pendente.']);
         exit;
     }
     $stmt->close();
+    while ($conn->next_result()) { }
 } else {
     // Novo cadastro
-    $stmt = $conn->prepare("
-        INSERT INTO usuarios (nome, email, telefone, endereco, data_nascimento, senha, email_verificado, confirmacao_token, confirmacao_expira)
-        VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
-    ");
+    $stmt = $conn->prepare("CALL sp_inserir_usuario(?, ?, ?, ?, ?, ?, ?, ?)");
     if (!$stmt) {
-        echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar cadastro.' . $conn->error]);
+        echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar cadastro.']);
         exit;
     }
     $stmt->bind_param("ssssssss", $nome, $email, $telefone, $endereco, $datanascimento, $senhaHash, $tokenConfirmacao, $expiraConfirmacao);
     if (!$stmt->execute()) {
-        echo json_encode(['success' => false, 'mensagem' => 'Erro ao cadastrar. ' . $stmt->error]);
+        echo json_encode(['success' => false, 'mensagem' => 'Erro ao cadastrar.']);
         exit;
     }
-    $idCadastro = (int) $conn->insert_id;
+    $res = $stmt->get_result();
+    $row = $res ? $res->fetch_assoc() : null;
+    $idCadastro = $row ? (int) $row['id'] : 0;
     $stmt->close();
+    while ($conn->next_result()) { }
 }
 
 app_log_event(

@@ -50,12 +50,13 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $senha === '') {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, nome, email, senha, email_verificado, is_admin FROM usuarios WHERE email = ? LIMIT 1");
+$stmt = $conn->prepare("CALL sp_buscar_usuario_por_email(?)");
 $stmt->bind_param("s", $email);
 $stmt->execute();
 $result = $stmt->get_result();
 $user   = $result ? $result->fetch_assoc() : null;
 $stmt->close();
+while ($conn->next_result()) { }
 
 // Bloqueia admin de usar o login comum
 if ($user && (int) ($user['is_admin'] ?? 0) === 1) {

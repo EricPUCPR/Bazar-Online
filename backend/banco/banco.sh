@@ -132,7 +132,7 @@ else
 fi
 echo ""
 
-# ── 6. Permissões mínimas (somente DML, sem DDL/GRANT) ───────
+# ── 6. Permissões mínimas (somente EXECUTE de stored procedures) ───────
 info "Configurando permissões de '$DB_USER' no banco '$DB_NAME'..."
 
 # Remove grants anteriores (silencioso se não existiam)
@@ -140,7 +140,7 @@ mysql_root -e "REVOKE ALL PRIVILEGES ON \`${DB_NAME}\`.* FROM '${DB_USER}'@'loca
     2>/dev/null || true
 
 if ! OUTPUT=$(mysql_root \
-    -e "GRANT SELECT, INSERT, UPDATE, DELETE ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';" 2>&1); then
+    -e "GRANT EXECUTE ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';" 2>&1); then
     die "Falha ao conceder permissões no banco '$DB_NAME'.
      Detalhe: $OUTPUT"
 fi
@@ -151,18 +151,18 @@ if ! OUTPUT=$(mysql_root -e "FLUSH PRIVILEGES;" 2>&1); then
 fi
 
 ok "Permissões configuradas:"
-info "  '$DB_USER'@'localhost' → $DB_NAME : SELECT, INSERT, UPDATE, DELETE"
+info "  '$DB_USER'@'localhost' → $DB_NAME : EXECUTE (apenas execução de procedures)"
 echo ""
 
 # ── 7. Valida acesso do usuário da aplicação ──────────────────
 info "Validando acesso do usuário '$DB_USER' ao banco '$DB_NAME'..."
 if ! OUTPUT=$(mysql -u"$DB_USER" -p"$DB_PASS" \
-    -e "SELECT 'ok' FROM \`${DB_NAME}\`.\`usuarios\` LIMIT 0;" 2>&1); then
+    -e "CALL \`${DB_NAME}\`.sp_buscar_usuario_por_email('teste@teste.com');" 2>&1); then
     warn "Não foi possível validar o acesso como '$DB_USER'."
     warn "Detalhe: $OUTPUT"
     warn "O banco foi configurado, mas verifique manualmente o acesso."
 else
-    ok "Acesso do usuário '$DB_USER' ao banco '$DB_NAME' confirmado."
+    ok "Acesso do usuário '$DB_USER' ao banco '$DB_NAME' (EXECUTE) confirmado."
 fi
 
 # ── Resumo final ──────────────────────────────────────────────

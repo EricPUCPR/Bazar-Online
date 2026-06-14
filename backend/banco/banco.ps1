@@ -152,14 +152,14 @@ if ($userExists -gt 0) {
 }
 Write-Host ""
 
-# ── 6. Permissões mínimas (somente DML, sem DDL/GRANT) ───────
+# ── 6. Permissões mínimas (somente EXECUTE de stored procedures) ───────
 Write-Info "Configurando permissões de '$DB_USER' no banco '$DB_NAME'..."
 
 # Remove grants anteriores (silencioso se não existiam)
 Invoke-MySqlRoot "REVOKE ALL PRIVILEGES ON ``${DB_NAME}``.* FROM '${DB_USER}'@'localhost';" 2>$null | Out-Null
 
 try {
-    $result = Invoke-MySqlRoot "GRANT SELECT, INSERT, UPDATE, DELETE ON ``${DB_NAME}``.* TO '${DB_USER}'@'localhost';"
+    $result = Invoke-MySqlRoot "GRANT EXECUTE ON ``${DB_NAME}``.* TO '${DB_USER}'@'localhost';"
     if ($LASTEXITCODE -ne 0) { throw $result }
 } catch {
     Exit-Err "Falha ao conceder permissões no banco '$DB_NAME'. Detalhe: $_"
@@ -173,16 +173,16 @@ try {
 }
 
 Write-Ok "Permissões configuradas:"
-Write-Info "  '$DB_USER'@'localhost' -> $DB_NAME : SELECT, INSERT, UPDATE, DELETE"
+Write-Info "  '$DB_USER'@'localhost' -> $DB_NAME : EXECUTE (apenas execução de procedures)"
 Write-Host ""
 
 # ── 7. Valida acesso do usuário da aplicação ──────────────────
 Write-Info "Validando acesso do usuário '$DB_USER' ao banco '$DB_NAME'..."
 try {
-    $validSql = "SELECT 'ok' FROM ``${DB_NAME}``.``usuarios`` LIMIT 0;"
+    $validSql = "CALL ``${DB_NAME}``.sp_buscar_usuario_por_email('teste@teste.com');"
     $result   = $validSql | & mysql -u"$DB_USER" -p"$DB_PASS" --batch --silent 2>&1
     if ($LASTEXITCODE -ne 0) { throw $result }
-    Write-Ok "Acesso do usuário '$DB_USER' ao banco '$DB_NAME' confirmado."
+    Write-Ok "Acesso do usuário '$DB_USER' ao banco '$DB_NAME' (EXECUTE) confirmado."
 } catch {
     Write-Warn "Não foi possível validar o acesso como '$DB_USER'."
     Write-Warn "Detalhe: $_"

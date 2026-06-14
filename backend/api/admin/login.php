@@ -47,13 +47,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-$stmt = $conn->prepare("
-    SELECT id, nome, email, email_verificado, is_admin,
-           telegram_chat_id, pergunta_seguranca, resposta_seguranca_hash
-    FROM usuarios
-    WHERE email = ? AND is_admin = 1
-    LIMIT 1
-");
+$stmt = $conn->prepare("CALL sp_buscar_usuario_por_email(?)");
 
 if (!$stmt) {
     echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar autenticação admin.']);
@@ -65,8 +59,9 @@ $stmt->execute();
 $result = $stmt->get_result();
 $admin  = $result ? $result->fetch_assoc() : null;
 $stmt->close();
+while ($conn->next_result()) { }
 
-if (!$admin) {
+if (!$admin || (int) ($admin['is_admin'] ?? 0) !== 1) {
     echo json_encode(['success' => false, 'mensagem' => 'E-mail não autorizado para login admin.']);
     exit;
 }

@@ -175,64 +175,12 @@ function db_ensure_column(mysqli $conn, string $table, string $column, string $d
 
 function db_ensure_usuario_schema(mysqli $conn): void
 {
-    if (!db_table_exists($conn, 'usuarios')) {
-        $conn->query("
-            CREATE TABLE usuarios (
-                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                nome VARCHAR(100) NOT NULL,
-                email VARCHAR(150) NOT NULL UNIQUE,
-                telefone VARCHAR(20) DEFAULT NULL,
-                endereco VARCHAR(200) DEFAULT NULL,
-                data_nascimento DATE DEFAULT NULL,
-                senha VARCHAR(255) NOT NULL,
-                criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                recuperacao_token VARCHAR(255) DEFAULT NULL,
-                recuperacao_expira DATETIME DEFAULT NULL,
-                email_verificado TINYINT(1) NOT NULL DEFAULT 0,
-                is_admin TINYINT(1) NOT NULL DEFAULT 0,
-                confirmacao_token VARCHAR(128) DEFAULT NULL,
-                confirmacao_expira DATETIME DEFAULT NULL,
-                telegram_chat_id VARCHAR(50) DEFAULT NULL,
-                pergunta_seguranca VARCHAR(255) DEFAULT NULL,
-                resposta_seguranca_hash VARCHAR(255) DEFAULT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
-        ");
-    }
-
-    db_ensure_column($conn, 'usuarios', 'recuperacao_token',  'recuperacao_token VARCHAR(255) DEFAULT NULL');
-    db_ensure_column($conn, 'usuarios', 'recuperacao_expira', 'recuperacao_expira DATETIME DEFAULT NULL');
-    db_ensure_column($conn, 'usuarios', 'email_verificado',   'email_verificado TINYINT(1) NOT NULL DEFAULT 0');
-    db_ensure_column($conn, 'usuarios', 'is_admin',           'is_admin TINYINT(1) NOT NULL DEFAULT 0');
-    db_ensure_column($conn, 'usuarios', 'confirmacao_token',  'confirmacao_token VARCHAR(128) DEFAULT NULL');
-    db_ensure_column($conn, 'usuarios', 'confirmacao_expira', 'confirmacao_expira DATETIME DEFAULT NULL');
-    db_ensure_column($conn, 'usuarios', 'telegram_chat_id',        'telegram_chat_id VARCHAR(50) DEFAULT NULL');
-    db_ensure_column($conn, 'usuarios', 'pergunta_seguranca',      'pergunta_seguranca VARCHAR(255) DEFAULT NULL');
-    db_ensure_column($conn, 'usuarios', 'resposta_seguranca_hash', 'resposta_seguranca_hash VARCHAR(255) DEFAULT NULL');
-    $conn->query("UPDATE usuarios SET is_admin = 1 WHERE id = 1");
+    // Schema is initialized by banco.sql. No-op for security under least privilege.
 }
 
 function db_ensure_log_schema(mysqli $conn): void
 {
-    if (!db_table_exists($conn, 'logs_sistema')) {
-        $conn->query("
-            CREATE TABLE logs_sistema (
-                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                usuario_id INT DEFAULT NULL,
-                nome VARCHAR(100) DEFAULT NULL,
-                email VARCHAR(150) DEFAULT NULL,
-                acao VARCHAR(80) NOT NULL,
-                detalhes VARCHAR(255) DEFAULT NULL,
-                criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
-        ");
-    }
-
-    db_ensure_column($conn, 'logs_sistema', 'usuario_id', 'usuario_id INT DEFAULT NULL');
-    db_ensure_column($conn, 'logs_sistema', 'nome',       'nome VARCHAR(100) DEFAULT NULL');
-    db_ensure_column($conn, 'logs_sistema', 'email',      'email VARCHAR(150) DEFAULT NULL');
-    db_ensure_column($conn, 'logs_sistema', 'acao',       'acao VARCHAR(80) NOT NULL DEFAULT ""');
-    db_ensure_column($conn, 'logs_sistema', 'detalhes',   'detalhes VARCHAR(255) DEFAULT NULL');
-    db_ensure_column($conn, 'logs_sistema', 'criado_em',  'criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP');
+    // Schema is initialized by banco.sql. No-op for security under least privilege.
 }
 
 function app_log_event(string $acao, string $detalhes = '', ?int $usuarioId = null, ?string $nome = null, ?string $email = null): void
@@ -243,12 +191,7 @@ function app_log_event(string $acao, string $detalhes = '', ?int $usuarioId = nu
         return;
     }
 
-    db_ensure_log_schema($conn);
-
-    $stmt = $conn->prepare("
-        INSERT INTO logs_sistema (usuario_id, nome, email, acao, detalhes)
-        VALUES (?, ?, ?, ?, ?)
-    ");
+    $stmt = $conn->prepare("CALL sp_salvar_log(?, ?, ?, ?, ?)");
 
     if (!$stmt) {
         return;
@@ -262,34 +205,7 @@ function app_log_event(string $acao, string $detalhes = '', ?int $usuarioId = nu
 
 function db_ensure_roupa_schema(mysqli $conn): void
 {
-    if (!db_table_exists($conn, 'roupas')) {
-        $conn->query("
-            CREATE TABLE roupas (
-                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                titulo VARCHAR(120) DEFAULT NULL,
-                tipo VARCHAR(100) NOT NULL,
-                tamanho VARCHAR(10) DEFAULT NULL,
-                sexo ENUM('Masculino','Feminino','Unissex') DEFAULT NULL,
-                estado ENUM('Novo','Semi-Novo','Usado') DEFAULT NULL,
-                local_doacao VARCHAR(180) DEFAULT NULL,
-                foto_path VARCHAR(255) DEFAULT NULL,
-                pausado TINYINT(1) NOT NULL DEFAULT 0,
-                id_usuario INT DEFAULT NULL,
-                criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
-        ");
-    }
-
-    db_ensure_column($conn, 'roupas', 'titulo',       'titulo VARCHAR(120) DEFAULT NULL');
-    db_ensure_column($conn, 'roupas', 'tipo',         'tipo VARCHAR(100) NOT NULL DEFAULT ""');
-    db_ensure_column($conn, 'roupas', 'tamanho',      'tamanho VARCHAR(10) DEFAULT NULL');
-    db_ensure_column($conn, 'roupas', 'sexo',         "sexo ENUM('Masculino','Feminino','Unissex') DEFAULT NULL");
-    db_ensure_column($conn, 'roupas', 'estado',       "estado ENUM('Novo','Semi-Novo','Usado') DEFAULT NULL");
-    db_ensure_column($conn, 'roupas', 'local_doacao', 'local_doacao VARCHAR(180) DEFAULT NULL');
-    db_ensure_column($conn, 'roupas', 'foto_path',    'foto_path VARCHAR(255) DEFAULT NULL');
-    db_ensure_column($conn, 'roupas', 'pausado',      'pausado TINYINT(1) NOT NULL DEFAULT 0');
-    db_ensure_column($conn, 'roupas', 'id_usuario',   'id_usuario INT DEFAULT NULL');
-    db_ensure_column($conn, 'roupas', 'criado_em',    'criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP');
+    // Schema is initialized by banco.sql. No-op for security under least privilege.
 }
 
 function configure_mailer($mail, ?string $fromName = null): void
