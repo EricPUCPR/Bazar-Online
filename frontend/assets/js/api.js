@@ -204,37 +204,51 @@ export const api = {
     },
 
     /**
-     * Confirma o e-mail via token da URL.
-     * @param {string} token
+     * Confirma o e-mail via código.
+     * @param {string} pendingToken
+     * @param {string} codigo
      */
-    async confirmarEmail(token) {
-        return request(`/api/auth/confirmar_email.php?token=${encodeURIComponent(token)}`);
-    },
-
-    /**
-     * Solicita link de recuperação de senha.
-     * @param {string} email
-     */
-    async solicitarRecuperacaoSenha(email) {
+    async confirmarEmail(pendingToken, codigo) {
         const body = new FormData();
-        body.append('action', 'solicitar');
-        body.append('email', email);
-        return request('/api/auth/recuperar_senha.php', { method: 'POST', body });
+        body.append('pending_token', pendingToken);
+        body.append('codigo', codigo);
+        const data = await request('/api/auth/confirmar_email.php', { method: 'POST', body });
+        if (data?.success && data.token) {
+            auth.salvarToken(data.token);
+        }
+        return data;
     },
 
     /**
-     * Redefine a senha usando o token do link de recuperação.
-     * @param {string} token
+     * Solicita código de recuperação de senha com a nova senha.
+     * @param {string} email
      * @param {string} senha
      * @param {string} confirmarSenha
      */
-    async redefinirSenha(token, senha, confirmarSenha) {
+    async solicitarRecuperacaoSenha(email, senha, confirmarSenha) {
         const body = new FormData();
-        body.append('action', 'redefinir');
-        body.append('token', token);
+        body.append('action', 'solicitar');
+        body.append('email', email);
         body.append('senha', senha);
         body.append('confirmar_senha', confirmarSenha);
         return request('/api/auth/recuperar_senha.php', { method: 'POST', body });
+    },
+
+    /**
+     * Redefine a senha usando o e-mail e o código.
+     * @param {string} email
+     * @param {string} codigo
+     */
+    async redefinirSenha(email, codigo) {
+        const body = new FormData();
+        body.append('action', 'redefinir');
+        body.append('email', email);
+        body.append('codigo', codigo);
+        const data = await request('/api/auth/recuperar_senha.php', { method: 'POST', body });
+        if (data?.success && data.token) {
+            auth.salvarToken(data.token);
+        }
+        return data;
     },
 
     // ── Roupas ────────────────────────────────────────────────────────────────
@@ -255,6 +269,24 @@ export const api = {
      */
     async cadastrarRoupa(formData) {
         return request('/api/roupas/cadastrar.php', { method: 'POST', body: formData }, true);
+    },
+
+    /**
+     * Remove (pausa) uma roupa do próprio usuário que ainda está disponível.
+     * @param {number} id
+     */
+    async pausarRoupaUsuario(id) {
+        const body = new FormData();
+        body.append('id', id);
+        return request('/api/roupas/pausar_usuario.php', { method: 'POST', body }, true);
+    },
+
+    /**
+     * Edita uma roupa do próprio usuário: marca a original como alterada e cria uma nova.
+     * @param {FormData} formData  (id_original, titulo, tipo, tamanho, sexo, estado, local_doacao, foto)
+     */
+    async editarRoupa(formData) {
+        return request('/api/roupas/editar.php', { method: 'POST', body: formData }, true);
     },
 
     /**

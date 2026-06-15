@@ -28,10 +28,10 @@ if ($conn->connect_error) {
 db_ensure_roupa_schema($conn);
 
 // Filtros opcionais
-$tamanho = trim($_GET['tamanho'] ?? '');
-$sexo    = trim($_GET['sexo'] ?? '');
-$tipo    = trim($_GET['tipo'] ?? '');
-$q       = trim($_GET['q'] ?? '');
+$tamanho = empty(trim($_GET['tamanho'] ?? '')) ? null : trim($_GET['tamanho']);
+$sexo    = empty(trim($_GET['sexo'] ?? ''))    ? null : trim($_GET['sexo']);
+$tipo    = empty(trim($_GET['tipo'] ?? ''))    ? null : trim($_GET['tipo']);
+$q       = empty(trim($_GET['q'] ?? ''))       ? null : trim($_GET['q']);
 
 $stmt = $conn->prepare("CALL sp_listar_roupas(?, ?, ?, ?)");
 $stmt->bind_param("ssss", $tamanho, $sexo, $tipo, $q);

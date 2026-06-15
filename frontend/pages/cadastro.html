@@ -61,8 +61,8 @@
             <h2>Cadastro</h2>
 
             <form id="formCadastro">
-                <input type="text" id="nome" name="nome" placeholder="Nome completo" pattern="[a-zA-ZÀ-ÿ\s]{8,}"
-                    title="O nome deve conter apenas letras e ter no mínimo 8 caracteres." required>
+                <input type="text" id="nome" name="nome" placeholder="Nome completo" pattern="[a-zA-ZÀ-ÿ\s]{3,}"
+                    title="O nome deve conter apenas letras e ter no mínimo 3 caracteres." required>
 
                 <input type="email" name="email" id="email" placeholder="E-mail"
                     pattern="[a-zA-Z0-9._]+@[a-zA-Z]+(\.[a-zA-Z]+)+" title="O formato do e-mail é inválido." required>
@@ -132,6 +132,7 @@
 
         const btnToggleSenha = document.getElementById("btnToggleSenha");
         const btnToggleConfirmar = document.getElementById("btnToggleConfirmar");
+
 
         // Configura datas limites para aniversário (18 a 120 anos)
         const dt = new Date();
@@ -273,10 +274,11 @@
                 const response = await api.cadastrar(formData);
 
                 if (response.success) {
-                    setFeedback(response.mensagem || "Cadastro pendente. Verifique seu e-mail.", "success");
-                    setTimeout(() => {
-                        window.location.href = "login.html?status=confirmacao_cadastro_enviada";
-                    }, 2000);
+                    currentPendingToken = response.pending_token; // SALVA O TOKEN AQUI
+                    setFeedback("");
+                    modal.classList.add("active");
+                    setModalFeedback(response.mensagem || "Código enviado com sucesso.", "success");
+                    startCooldown(60);
                 } else {
                     setFeedback(response.mensagem || "Não foi possível cadastrar.", "error");
                     grecaptcha.reset();
@@ -287,9 +289,106 @@
             }
         });
 
+        const modal = document.getElementById("modalConfirmacao");
+        const formConfirmacao = document.getElementById("formConfirmacaoCodigo");
+        const codigoInput = document.getElementById("codigoConfirmacao");
+        const modalFeedback = document.getElementById("modalFeedback");
+        const btnReenviar = document.getElementById("btnReenviarCodigo");
+        
+         let currentPendingToken = '';
+        let cooldownTimer = null;
+        let cooldownSeconds = 0;
+
+        function setModalFeedback(message, status = "muted") {
+            modalFeedback.className = `feedback feedback-${status}`;
+            modalFeedback.textContent = message;
+        }
+
+        function startCooldown(seconds) {
+            clearInterval(cooldownTimer);
+            cooldownSeconds = seconds;
+            btnReenviar.disabled = true;
+            btnReenviar.textContent = `Reenviar (${cooldownSeconds}s)`;
+
+            cooldownTimer = setInterval(() => {
+                cooldownSeconds--;
+                if (cooldownSeconds <= 0) {
+                    clearInterval(cooldownTimer);
+                    btnReenviar.disabled = false;
+                    btnReenviar.textContent = "Reenviar Código";
+                } else {
+                    btnReenviar.textContent = `Reenviar (${cooldownSeconds}s)`;
+                }
+            }, 1000);
+        }
+
+        btnReenviar.addEventListener("click", async () => {
+            if (cooldownSeconds > 0) return;
+            setModalFeedback("Reenviando...");
+            try {
+                const formData = new FormData(form);
+                const response = await api.cadastrar(formData);
+                if (response.success) {
+                    currentPendingToken = response.pending_token; // ATUALIZA O TOKEN AQUI
+                    setModalFeedback(response.mensagem || "Novo código enviado com sucesso.", "success");
+                    startCooldown(60);
+                } else {
+                    setModalFeedback(response.mensagem || "Erro ao solicitar novo código.", "error");
+                }
+            } catch (error) {
+                console.error(error);
+                setModalFeedback("Erro ao conectar com o servidor.", "error");
+            }
+        });
+
+        formConfirmacao.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            setModalFeedback("Verificando...");
+
+            try {
+                const codigoVal = codigoInput.value.trim();
+                const response = await api.confirmarEmail(currentPendingToken, codigoVal); // USA O TOKEN AQUI
+
+                if (response.success) {
+                    setModalFeedback(response.mensagem || "E-mail validado!", "success");
+                    setTimeout(() => {
+                        window.location.href = "../index.html";
+                    }, 1500);
+                } else {
+                    setModalFeedback(response.mensagem || "Código inválido.", "error");
+                    if (response.mensagem && (response.mensagem.includes("invalidado") || response.mensagem.includes("excesso"))) {
+                        setTimeout(() => {
+                            modal.classList.remove("active");
+                            setFeedback(response.mensagem, "error");
+                            grecaptcha.reset();
+                        }, 2000);
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                setModalFeedback("Erro ao conectar com o servidor.", "error");
+            }
+        });
+
         // Estado inicial
         senha.dispatchEvent(new Event("input"));
     </script>
+
+    <!-- Modal de Verificação -->
+    <div id="modalConfirmacao" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Verifique seu E-mail</h3>
+            <p>Enviamos um código de 6 dígitos para o e-mail cadastrado.</p>
+            <form id="formConfirmacaoCodigo">
+                <input type="text" id="codigoConfirmacao" maxlength="6" pattern="\d{6}" placeholder="000000" required>
+                <div id="modalFeedback" class="feedback"></div>
+                <div class="modal-btn-row">
+                    <button type="submit" class="btn-primary">Confirmar</button>
+                    <button type="button" id="btnReenviarCodigo" class="btn-light">Reenviar (60s)</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </body>
 

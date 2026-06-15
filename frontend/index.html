@@ -237,7 +237,7 @@
         roupasGrid.innerHTML = lista.map((roupa) => {
             const pausado = Number(roupa.pausado) === 1;
             const noCarrinho = cart.some((item) => Number(item.id) === Number(roupa.id));
-            const imgSrc = roupa.foto_path ? (roupa.foto_path.startsWith('http') ? roupa.foto_path : `${API_UPLOADS_BASE}${roupa.foto_path}`) : '';
+            const imgSrc = roupa.foto_path ? (roupa.foto_path.startsWith('http') ? roupa.foto_path : `${API_UPLOADS_BASE}storage/${roupa.foto_path}`) : '';
 
             return `
             <div class="item" data-id="${Number(roupa.id)}" data-tamanho="${escapeHtml(roupa.tamanho || "")}" data-tipo="${escapeHtml(roupa.tipo || "")}" data-sexo="${escapeHtml(roupa.sexo || "")}" data-local="${escapeHtml(roupa.local_doacao || "")}" data-busca="${escapeHtml(`${roupa.titulo || ""} ${roupa.tipo || ""} ${roupa.tamanho || ""} ${roupa.sexo || ""} ${roupa.estado || ""} ${roupa.local_doacao || ""}`)}">

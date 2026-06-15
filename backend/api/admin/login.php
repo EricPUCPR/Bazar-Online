@@ -47,7 +47,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-$stmt = $conn->prepare("CALL sp_buscar_usuario_por_email(?)");
+$stmt = $conn->prepare("CALL sp_buscar_admin_por_email(?)");
 
 if (!$stmt) {
     echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar autenticação admin.']);
@@ -61,13 +61,8 @@ $admin  = $result ? $result->fetch_assoc() : null;
 $stmt->close();
 while ($conn->next_result()) { }
 
-if (!$admin || (int) ($admin['is_admin'] ?? 0) !== 1) {
+if (!$admin) {
     echo json_encode(['success' => false, 'mensagem' => 'E-mail não autorizado para login admin.']);
-    exit;
-}
-
-if ((int) $admin['email_verificado'] !== 1) {
-    echo json_encode(['success' => false, 'mensagem' => 'Valide o e-mail da conta admin antes de entrar.']);
     exit;
 }
 

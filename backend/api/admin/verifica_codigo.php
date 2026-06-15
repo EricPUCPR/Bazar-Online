@@ -51,15 +51,13 @@ $adminId    = (int) $pending['sub'];
 $adminNome  = $pending['nome'];
 $adminEmail = $pending['email'];
 
-// JWT admin tem 'admin' = true
+// JWT stateless: apenas sub (id do admin) e admin=true
 $token = jwt_generate([
     'sub'   => $adminId,
-    'nome'  => $adminNome,
-    'email' => $adminEmail,
     'admin' => true,
 ]);
 
-app_log_event('Login admin', 'Login admin validado por código.', $adminId, $adminNome, $adminEmail);
+app_log_event('Login admin', 'Login admin validado por código.', null, $adminId, $adminNome, $adminEmail);
 
 echo json_encode([
     'success'  => true,

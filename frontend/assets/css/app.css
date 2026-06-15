@@ -412,6 +412,7 @@ select:focus {
 
 .profile-page .box {
     text-align: left;
+    width: min(100%, 600px);
 }
 
 .profile-info {
@@ -419,6 +420,9 @@ select:focus {
     padding: 10px;
     border-radius: 6px;
     background: var(--color-field);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .store-page .app-main {
@@ -866,4 +870,200 @@ body.status-page {
     .terms-check label {
         white-space: normal;
     }
+}
+
+/* Modal de Verificação de Código */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    background: var(--color-surface);
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-panel);
+    width: min(100%, 360px);
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-content h3 {
+    margin: 0 0 10px;
+    color: var(--color-brand);
+}
+
+.modal-content p {
+    font-size: 13px;
+    color: var(--color-muted);
+    margin-bottom: 16px;
+}
+
+.modal-content input {
+    text-align: center;
+    font-size: 20px;
+    letter-spacing: 4px;
+    font-weight: bold;
+}
+
+.modal-btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.modal-btn-row button {
+    flex: 1;
+}
+
+/* Estilos de Roupas no Perfil e Ações do Perfil */
+.btn-deletar-campo {
+    background: none;
+    border: none;
+    color: #ff4d4d;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    padding-left: 10px;
+}
+
+.btn-deletar-campo:hover {
+    color: #ff0000;
+    font-weight: bold;
+}
+
+.admin-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px dashed var(--color-border);
+}
+
+.roupa-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.roupa-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.roupa-img {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #d9e2ec;
+    flex-shrink: 0;
+    border: 1px solid var(--color-border);
+}
+
+.roupa-details {
+    flex: 1;
+    font-size: 13px;
+    color: var(--color-text);
+    text-align: left;
+}
+
+.roupa-details h4 {
+    margin: 0 0 6px;
+    color: var(--color-brand);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.roupa-status {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-disponivel {
+    background: #e8f5e9;
+    color: var(--color-success);
+}
+
+.status-doada {
+    background: #eceff1;
+    color: var(--color-muted);
+    text-decoration: line-through;
+}
+
+.status-editado {
+    background: #fff8e1;
+    color: #f57f17;
+    text-decoration: line-through;
+}
+
+.roupa-indisponivel {
+    opacity: 0.55;
+    filter: grayscale(100%);
+    pointer-events: none;
+    user-select: none;
+}
+
+.roupa-img-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.roupa-acoes {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-roupa-acao {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--color-field);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.btn-roupa-acao:hover {
+    background: var(--color-border);
+    transform: scale(1.1);
+}
+
+.btn-roupa-acao:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
 }

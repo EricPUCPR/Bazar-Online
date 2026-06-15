@@ -58,19 +58,8 @@ $user   = $result ? $result->fetch_assoc() : null;
 $stmt->close();
 while ($conn->next_result()) { }
 
-// Bloqueia admin de usar o login comum
-if ($user && (int) ($user['is_admin'] ?? 0) === 1) {
-    echo json_encode(['success' => false, 'mensagem' => 'Conta admin. Use a URL exclusiva do administrador.']);
-    exit;
-}
-
 if (!$user || !password_verify($senha, $user['senha'])) {
     echo json_encode(['success' => false, 'mensagem' => 'E-mail ou senha inválidos.']);
-    exit;
-}
-
-if ((int) $user['email_verificado'] !== 1) {
-    echo json_encode(['success' => false, 'mensagem' => 'E-mail não verificado. Cheque sua caixa de entrada.']);
     exit;
 }
 

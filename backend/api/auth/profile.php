@@ -41,6 +41,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
+    $roupas = [];
+    $stmtRoupas = $conn->prepare("CALL sp_listar_roupas_por_usuario(?)");
+    if ($stmtRoupas) {
+        $stmtRoupas->bind_param("i", $userId);
+        $stmtRoupas->execute();
+        $resRoupas = $stmtRoupas->get_result();
+        if ($resRoupas) {
+            while ($row = $resRoupas->fetch_assoc()) {
+                $roupas[] = [
+                    'id'           => (int) $row['id'],
+                    'titulo'       => $row['titulo'],
+                    'tipo'         => $row['tipo'],
+                    'tamanho'      => $row['tamanho'],
+                    'sexo'         => $row['sexo'],
+                    'estado'       => $row['estado'],
+                    'local_doacao' => $row['local_doacao'],
+                    'foto_path'    => $row['foto_path'],
+                    'status'       => $row['status'] ?? 'disponivel',
+                    'criado_em'    => $row['criado_em']
+                ];
+            }
+        }
+        $stmtRoupas->close();
+        while ($conn->next_result()) { }
+    }
+
     echo json_encode([
         'success' => true,
         'perfil'  => [
@@ -52,7 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'telegram_chat_id'  => $user['telegram_chat_id'] ?? '',
             'pergunta_seguranca'=> $user['pergunta_seguranca'] ?? '',
             'is_admin'          => (int) ($user['is_admin'] ?? 0) === 1
-        ]
+        ],
+        'roupas'  => $roupas
     ]);
     exit;
 }

@@ -13,6 +13,24 @@
         body {
             font-family: 'Inter', Arial, sans-serif;
         }
+        .regras-senha ul {
+            padding-left: 20px;
+            margin: 8px 0 0;
+        }
+        .regras-senha li.invalid {
+            color: #8d98a5;
+        }
+        .regras-senha li.valid {
+            color: var(--color-success);
+            font-weight: bold;
+        }
+        #erro-regex, #erro-match {
+            display: none;
+            color: var(--color-danger);
+            font-size: 12px;
+            margin-top: 4px;
+            text-align: left;
+        }
     </style>
 </head>
 
@@ -26,12 +44,38 @@
 <div class="page-main">
     <div class="box">
         <h2>Recuperar Senha</h2>
-        <p>Insira seu e-mail cadastrado e enviaremos um link para você criar uma nova senha.</p>
+        <p>Defina a sua nova senha e enviaremos um código de verificação para o seu e-mail.</p>
+
+        <div class="regras-senha">
+            <strong>Sua senha deve conter:</strong>
+            <ul>
+                <li id="req-length" class="invalid">No mínimo 8 caracteres</li>
+                <li id="req-upper" class="invalid">1 Letra maiúscula</li>
+                <li id="req-lower" class="invalid">1 Letra minúscula</li>
+                <li id="req-number" class="invalid">1 Número</li>
+                <li id="req-special" class="invalid">1 Símbolo</li>
+                <li id="req-no-seq" class="invalid">Não é permitida sequência numérica</li>
+            </ul>
+        </div>
 
         <form id="formRecuperar">
             <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
+
+            <div class="password-wrapper" style="margin-top: 10px;">
+                <input type="password" name="senha" id="password" required placeholder="Nova senha">
+                <button type="button" class="toggle-password" id="btnToggleSenha" aria-label="Visualizar senha">👁</button>
+            </div>
+            <span id="erro-regex">Senha fraca!</span>
+
+            <div class="password-wrapper" style="margin-top: 10px;">
+                <input type="password" name="confirmar_senha" id="confirmar_senha" required placeholder="Confirme a senha">
+                <button type="button" class="toggle-password" id="btnToggleConfirmar" aria-label="Visualizar confirmar senha">👁</button>
+            </div>
+            <span id="erro-match">As senhas não coincidem.</span>
+            
             <span id="feedback"></span>
-            <button type="submit" class="btn-block">Enviar Link de Recuperação</button>
+
+            <button type="submit" class="btn-block" style="margin-top: 15px;">Enviar Código de Recuperação</button>
         </form>
 
         <a href="login.html" class="form-link">Voltar</a>
@@ -43,26 +87,137 @@
 
     const form = document.getElementById("formRecuperar");
     const emailInput = document.getElementById("email");
+    const password = document.getElementById("password");
+    const confirmarSenha = document.getElementById("confirmar_senha");
     const feedback = document.getElementById("feedback");
+
+    const reqLength = document.getElementById("req-length");
+    const reqUpper = document.getElementById("req-upper");
+    const reqLower = document.getElementById("req-lower");
+    const reqNumber = document.getElementById("req-number");
+    const reqSpecial = document.getElementById("req-special");
+    const reqNoSeq = document.getElementById("req-no-seq");
+
+    const erroRegex = document.getElementById("erro-regex");
+    const erroMatch = document.getElementById("erro-match");
+
+    const btnToggleSenha = document.getElementById("btnToggleSenha");
+    const btnToggleConfirmar = document.getElementById("btnToggleConfirmar");
+
+    const modal = document.getElementById("modalConfirmacao");
+    const formConfirmacao = document.getElementById("formConfirmacaoCodigo");
+    const codigoInput = document.getElementById("codigoConfirmacao");
+    const modalFeedback = document.getElementById("modalFeedback");
+    const btnReenviar = document.getElementById("btnReenviarCodigo");
+
+    let cooldownTimer = null;
+    let cooldownSeconds = 0;
+
+    // Mostra/Oculta senhas
+    function setupTogglePassword(btn, targetId) {
+        btn.addEventListener("click", () => {
+            const campo = document.getElementById(targetId);
+            if (campo.type === "password") {
+                campo.type = "text";
+                btn.textContent = "🙈";
+            } else {
+                campo.type = "password";
+                btn.textContent = "👁";
+            }
+        });
+    }
+    setupTogglePassword(btnToggleSenha, "password");
+    setupTogglePassword(btnToggleConfirmar, "confirmar_senha");
 
     function setFeedback(message, status = "muted") {
         feedback.className = `feedback feedback-${status}`;
         feedback.textContent = message;
     }
 
+    function setModalFeedback(message, status = "muted") {
+        modalFeedback.className = `feedback feedback-${status}`;
+        modalFeedback.textContent = message;
+    }
+
+    function startCooldown(seconds) {
+        clearInterval(cooldownTimer);
+        cooldownSeconds = seconds;
+        btnReenviar.disabled = true;
+        btnReenviar.textContent = `Reenviar (${cooldownSeconds}s)`;
+
+        cooldownTimer = setInterval(() => {
+            cooldownSeconds--;
+            if (cooldownSeconds <= 0) {
+                clearInterval(cooldownTimer);
+                btnReenviar.disabled = false;
+                btnReenviar.textContent = "Reenviar Código";
+            } else {
+                btnReenviar.textContent = `Reenviar (${cooldownSeconds}s)`;
+            }
+        }, 1000);
+    }
+
+    function validarSenha() {
+        const val = password.value;
+        const temSequenciaNumerica = /(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)/.test(val);
+
+        const checks = [
+            val.length >= 8,
+            /[A-Z]/.test(val),
+            /[a-z]/.test(val),
+            /\d/.test(val),
+            /[@$!%*?&]/.test(val),
+            !temSequenciaNumerica
+        ];
+
+        reqLength.className = checks[0] ? "valid" : "invalid";
+        reqUpper.className = checks[1] ? "valid" : "invalid";
+        reqLower.className = checks[2] ? "valid" : "invalid";
+        reqNumber.className = checks[3] ? "valid" : "invalid";
+        reqSpecial.className = checks[4] ? "valid" : "invalid";
+        reqNoSeq.className = checks[5] ? "valid" : "invalid";
+
+        const senhaValida = checks.every(c => c);
+        erroRegex.style.display = (val !== "" && !senhaValida) ? "block" : "none";
+
+        return senhaValida;
+    }
+
+    function validarMatch() {
+        const match = password.value === confirmarSenha.value;
+        erroMatch.style.display = (confirmarSenha.value !== "" && !match) ? "block" : "none";
+        return match;
+    }
+
+    password.addEventListener("input", () => {
+        validarSenha();
+        validarMatch();
+    });
+    confirmarSenha.addEventListener("input", validarMatch);
+
+    // Solicitar código inicial
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        const senhaValida = validarSenha();
+        const senhasConferem = validarMatch();
+
+        if (!senhaValida || !senhasConferem) {
+            setFeedback("Corrija os erros na senha antes de continuar.", "error");
+            return;
+        }
+
         setFeedback("Carregando...");
 
         try {
             const email = emailInput.value.trim();
-            const response = await api.solicitarRecuperacaoSenha(email);
+            const response = await api.solicitarRecuperacaoSenha(email, password.value, confirmarSenha.value);
 
             if (response.success) {
-                setFeedback(response.mensagem || "Se o e-mail estiver cadastrado, você receberá o link.", "success");
-                setTimeout(() => {
-                    window.location.href = "login.html?status=ok";
-                }, 2000);
+                setFeedback("");
+                modal.classList.add("active");
+                setModalFeedback(response.mensagem || "Código enviado com sucesso.", "success");
+                startCooldown(60);
             } else {
                 setFeedback(response.mensagem || "Erro ao solicitar recuperação.", "error");
             }
@@ -71,7 +226,75 @@
             setFeedback("Erro ao conectar com o servidor.", "error");
         }
     });
+
+    // Reenviar código
+    btnReenviar.addEventListener("click", async () => {
+        if (cooldownSeconds > 0) return;
+        setModalFeedback("Reenviando...");
+        try {
+            const email = emailInput.value.trim();
+            const response = await api.solicitarRecuperacaoSenha(email, password.value, confirmarSenha.value);
+            if (response.success) {
+                setModalFeedback(response.mensagem || "Novo código enviado com sucesso.", "success");
+                startCooldown(60);
+            } else {
+                setModalFeedback(response.mensagem || "Erro ao solicitar novo código.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            setModalFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+
+    // Confirmar código
+    formConfirmacao.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setModalFeedback("Verificando...");
+
+        try {
+            const emailVal = emailInput.value.trim();
+            const codigoVal = codigoInput.value.trim();
+            const response = await api.redefinirSenha(emailVal, codigoVal);
+
+            if (response.success) {
+                setModalFeedback(response.mensagem || "Senha atualizada!", "success");
+                setTimeout(() => {
+                    window.location.href = "../index.html";
+                }, 1500);
+            } else {
+                setModalFeedback(response.mensagem || "Código inválido.", "error");
+                if (response.mensagem && (response.mensagem.includes("invalidado") || response.mensagem.includes("excesso"))) {
+                    setTimeout(() => {
+                        modal.classList.remove("active");
+                        setFeedback(response.mensagem, "error");
+                    }, 2000);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            setModalFeedback("Erro ao conectar com o servidor.", "error");
+        }
+    });
+
+    // Estado inicial
+    validarSenha();
 </script>
+
+<!-- Modal de Verificação -->
+<div id="modalConfirmacao" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Recuperação de Senha</h3>
+        <p>Enviamos um código de 6 dígitos para o seu e-mail.</p>
+        <form id="formConfirmacaoCodigo">
+            <input type="text" id="codigoConfirmacao" maxlength="6" pattern="\d{6}" placeholder="000000" required>
+            <div id="modalFeedback" class="feedback"></div>
+            <div class="modal-btn-row">
+                <button type="submit" class="btn-primary">Confirmar</button>
+                <button type="button" id="btnReenviarCodigo" class="btn-light">Reenviar (60s)</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 </body>
 </html>

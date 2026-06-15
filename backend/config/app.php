@@ -183,23 +183,41 @@ function db_ensure_log_schema(mysqli $conn): void
     // Schema is initialized by banco.sql. No-op for security under least privilege.
 }
 
-function app_log_event(string $acao, string $detalhes = '', ?int $usuarioId = null, ?string $nome = null, ?string $email = null): void
-{
+/**
+ * Registra um evento de auditoria no banco.
+ *
+ * @param string   $acao        Nome da ação (ex: 'Login', 'Criação de conta')
+ * @param string   $detalhes    Descrição livre
+ * @param int|null $usuarioId   ID do usuário comum (null para admins ou sistema)
+ * @param int|null $adminId     ID do admin (null para usuários comuns ou sistema)
+ * @param string|null $nome     Nome para exibição no log
+ * @param string|null $email    E-mail para exibição no log
+ */
+function app_log_event(
+    string  $acao,
+    string  $detalhes   = '',
+    ?int    $usuarioId  = null,
+    ?int    $adminId    = null,
+    ?string $nome       = null,
+    ?string $email      = null
+): void {
     $conn = db_connect('DB_NAME');
 
     if ($conn->connect_error) {
         return;
     }
 
-    $stmt = $conn->prepare("CALL sp_salvar_log(?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("CALL sp_salvar_log(?, ?, ?, ?, ?, ?)");
 
     if (!$stmt) {
+        $conn->close();
         return;
     }
 
-    $stmt->bind_param("issss", $usuarioId, $nome, $email, $acao, $detalhes);
+    $stmt->bind_param("iissss", $usuarioId, $adminId, $nome, $email, $acao, $detalhes);
     $stmt->execute();
     $stmt->close();
+    while ($conn->next_result()) { }
     $conn->close();
 }
 

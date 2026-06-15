@@ -2,15 +2,8 @@
 /**
  * POST /api/auth/cadastro.php
  *
- * Cria um novo usuário ou reenvia o e-mail de confirmação para um cadastro pendente.
- * Lógica extraída de CadastroUsuarios.php.
- *
- * Body: multipart/form-data
- *   nome, email, datanascimento, telefone, endereco, senha, confirmar_senha,
- *   termos (presente = aceito), g-recaptcha-response
- *
- * Resposta de sucesso:
- *   { "success": true, "mensagem": "E-mail de confirmação enviado." }
+ * ETAPA 1 — Envia o código por e-mail e devolve o JWT Temporário.
+ * Stateless: Não usa banco de dados para salvar o usuário ainda e NÃO usa $_SESSION.
  */
 
 require_once __DIR__ . '/../../config/app.php';
@@ -24,7 +17,6 @@ $vendorBase = __DIR__ . '/PHPMailer/';
 require $vendorBase . 'Exception.php';
 require $vendorBase . 'PHPMailer.php';
 require $vendorBase . 'SMTP.php';
-
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -43,61 +35,38 @@ function normalizarTexto(string $texto): string
     return preg_replace('/[^a-z0-9 ]/', '', $texto);
 }
 
-$conn = db_connect('DB_NAME');
-
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'mensagem' => 'Erro de conexão com o banco.']);
-    exit;
-}
-
-db_ensure_usuario_schema($conn);
-
-$nome           = $_POST['nome'] ?? '';
+// ── Coleta dos dados
+$nome           = trim($_POST['nome'] ?? '');
 $email          = trim($_POST['email'] ?? '');
-$telefone       = $_POST['telefone'] ?? '';
-$endereco       = $_POST['endereco'] ?? '';
-$datanascimento = $_POST['datanascimento'] ?? '';
+$telefone       = trim($_POST['telefone'] ?? '');
+$endereco       = trim($_POST['endereco'] ?? '');
+$datanascimento = trim($_POST['datanascimento'] ?? '');
 $senha          = $_POST['senha'] ?? '';
 $confirmar      = $_POST['confirmar_senha'] ?? '';
 $aceitouTermos  = isset($_POST['termos']);
 $recaptcha      = $_POST['g-recaptcha-response'] ?? '';
 
-// Validações
-$senhaForte  = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/";
-$regexSeq    = "/(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)/";
-$senhaNorm   = normalizarTexto($senha);
-
-$partesNome = [];
-foreach (preg_split('/\s+/', normalizarTexto($nome)) as $parte) {
-    if (strlen($parte) >= 3) {
-        $partesNome[] = $parte;
-    }
-}
-$contemNome = false;
-foreach ($partesNome as $parte) {
-    if (strpos($senhaNorm, $parte) !== false) {
-        $contemNome = true;
-        break;
-    }
-}
-
-$dataAtual  = new DateTime();
-$dataNascObj = DateTime::createFromFormat('Y-m-d', $datanascimento);
-$idade       = $dataNascObj ? $dataNascObj->diff($dataAtual)->y : -1;
+// ── Validações
+$senhaForte = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/";
+$regexSeq   = "/(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)/";
 
 if (!$aceitouTermos) {
     echo json_encode(['success' => false, 'mensagem' => 'Aceite os termos de uso.']);
     exit;
 }
-if (!preg_match('/^[a-zA-ZÀ-ÿ\s]{8,}$/u', $nome)) {
-    echo json_encode(['success' => false, 'mensagem' => 'O nome deve conter apenas letras e ter no mínimo 8 caracteres.']);
+if (!preg_match('/^[a-zA-ZÀ-ÿ\s]{3,}$/u', $nome)) {
+    echo json_encode(['success' => false, 'mensagem' => 'O nome deve conter apenas letras e ter no mínimo 3 caracteres.']);
     exit;
 }
-if (!preg_match('/^[a-zA-Z0-9._]+@[a-zA-Z]+(\.[a-zA-Z]+)+$/', $email)) {
+if (!preg_match('/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/', $email)) {
     echo json_encode(['success' => false, 'mensagem' => 'O formato do e-mail é inválido.']);
     exit;
 }
+
+$dataAtual   = new DateTime();
+$dataNascObj = DateTime::createFromFormat('Y-m-d', $datanascimento);
+$idade       = $dataNascObj ? $dataNascObj->diff($dataAtual)->y : -1;
+
 if (!$dataNascObj || $idade < 18 || $idade > 120 || $dataNascObj > $dataAtual) {
     echo json_encode(['success' => false, 'mensagem' => 'A idade deve ser entre 18 e 120 anos.']);
     exit;
@@ -114,108 +83,83 @@ if (preg_match($regexSeq, $senha)) {
     echo json_encode(['success' => false, 'mensagem' => 'A senha não pode conter sequência numérica.']);
     exit;
 }
-if ($contemNome) {
-    echo json_encode(['success' => false, 'mensagem' => 'A senha não pode conter o seu nome.']);
-    exit;
+
+$senhaNorm  = normalizarTexto($senha);
+$partesNome = array_filter(preg_split('/\s+/', normalizarTexto($nome)), fn($p) => strlen($p) >= 3);
+foreach ($partesNome as $parte) {
+    if (strpos($senhaNorm, $parte) !== false) {
+        echo json_encode(['success' => false, 'mensagem' => 'A senha não pode conter o seu nome.']);
+        exit;
+    }
 }
+
 if (!validar_recaptcha($recaptcha)) {
     echo json_encode(['success' => false, 'mensagem' => 'Por favor, confirme que você não é um robô.']);
     exit;
 }
 
-// Verifica e-mail existente
-$idExistente = null;
-$jaVerificado = 0;
-$stmtBusca = $conn->prepare("CALL sp_buscar_usuario_por_email(?)");
-if ($stmtBusca) {
-    $stmtBusca->bind_param("s", $email);
-    $stmtBusca->execute();
-    $resBusca = $stmtBusca->get_result();
-    if ($resBusca && $resBusca->num_rows > 0) {
-        $existente    = $resBusca->fetch_assoc();
-        $idExistente  = (int) $existente['id'];
-        $jaVerificado = (int) ($existente['email_verificado'] ?? 0);
-    }
-    $stmtBusca->close();
-    while ($conn->next_result()) { }
+// ── Verifica e-mail já cadastrado
+$conn = db_connect('DB_NAME');
+if ($conn->connect_error) {
+    echo json_encode(['success' => false, 'mensagem' => 'Erro de conexão com o banco.']);
+    exit;
 }
 
-if ($idExistente && $jaVerificado === 1) {
+$stmt = $conn->prepare("CALL sp_buscar_usuario_por_email(?)");
+$stmt->bind_param("s", $email);
+$stmt->execute();
+$existente = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+while ($conn->next_result()) { }
+
+if ($existente) {
     echo json_encode(['success' => false, 'mensagem' => 'E-mail já cadastrado. Faça login.']);
     exit;
 }
 
-$senhaHash          = password_hash($senha, PASSWORD_DEFAULT);
-$tokenConfirmacao   = bin2hex(random_bytes(32));
-$expiraConfirmacao  = date('Y-m-d H:i:s', strtotime('+24 hours'));
-$idCadastro         = $idExistente;
-$cadastroNovo       = !$idExistente;
+// ── Gera o Código, os Hashes e o JWT Temporário
+$codigo    = sprintf('%06d', mt_rand(0, 999999));
+$senhaHash = password_hash($senha, PASSWORD_DEFAULT);
+$mfaHash   = hash('sha256', $codigo);
 
-// URL de confirmação (frontend serve a página; o frontend chama o backend com o token)
-$frontendOrigin = env_value('FRONTEND_ORIGIN', 'http://localhost:8000');
-$linkConfirmacao = $frontendOrigin . '/pages/confirmar-email.html?token=' . $tokenConfirmacao;
+// Aqui criamos a "Sessão JWT" que vai pro Frontend
+$pendingToken = jwt_generate([
+    'scope'          => 'pending_register',
+    'email'          => $email,
+    'nome'           => $nome,
+    'telefone'       => $telefone,
+    'endereco'       => $endereco,
+    'datanascimento' => $datanascimento,
+    'senha_hash'     => $senhaHash,
+    'mfa_hash'       => $mfaHash
+], 300); // Expira em 5 minutos (300 segundos)
 
-if ($idExistente && $jaVerificado === 0) {
-    // Reenvio para cadastro pendente
-    $stmt = $conn->prepare("CALL sp_atualizar_cadastro_pendente(?, ?, ?, ?, ?, ?, ?, ?)");
-    if (!$stmt) {
-        echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar atualização.']);
-        exit;
-    }
-    $stmt->bind_param("isssssss", $idExistente, $nome, $telefone, $endereco, $datanascimento, $senhaHash, $tokenConfirmacao, $expiraConfirmacao);
-    if (!$stmt->execute()) {
-        echo json_encode(['success' => false, 'mensagem' => 'Erro ao atualizar cadastro pendente.']);
-        exit;
-    }
-    $stmt->close();
-    while ($conn->next_result()) { }
-} else {
-    // Novo cadastro
-    $stmt = $conn->prepare("CALL sp_inserir_usuario(?, ?, ?, ?, ?, ?, ?, ?)");
-    if (!$stmt) {
-        echo json_encode(['success' => false, 'mensagem' => 'Erro ao preparar cadastro.']);
-        exit;
-    }
-    $stmt->bind_param("ssssssss", $nome, $email, $telefone, $endereco, $datanascimento, $senhaHash, $tokenConfirmacao, $expiraConfirmacao);
-    if (!$stmt->execute()) {
-        echo json_encode(['success' => false, 'mensagem' => 'Erro ao cadastrar.']);
-        exit;
-    }
-    $res = $stmt->get_result();
-    $row = $res ? $res->fetch_assoc() : null;
-    $idCadastro = $row ? (int) $row['id'] : 0;
-    $stmt->close();
-    while ($conn->next_result()) { }
-}
-
-app_log_event(
-    $cadastroNovo ? 'Criação de conta' : 'Atualização de cadastro pendente',
-    $cadastroNovo ? 'Usuário iniciou cadastro.' : 'Cadastro pendente atualizado.',
-    $idCadastro,
-    $nome,
-    $email
-);
-
-// Envia e-mail de confirmação
+// ── Envia o código por e-mail
 $mail = new PHPMailer(true);
 try {
     configure_mailer($mail);
     $mail->addAddress($email);
     $mail->isHTML(true);
-    $mail->Subject = 'Valide seu e-mail - Bazar Online';
+    $mail->Subject = 'Código de Verificação - Bazar Online';
     $mail->Body = "
         <html><head><meta charset='UTF-8'></head>
-        <body>
-            <p>Seu cadastro foi criado. Falta apenas validar seu e-mail.</p>
-            <p><a href='{$linkConfirmacao}'>Validar e-mail</a></p>
-            <p>Este link expira em 24 horas.</p>
+        <body style='font-family:sans-serif;'>
+            <h2 style='color:#1f6f9f;'>Confirmação de Cadastro</h2>
+            <p>Seu código de verificação é:</p>
+            <p style='font-size:32px;font-weight:bold;letter-spacing:6px;color:#263238;'>{$codigo}</p>
+            <p style='color:#666;font-size:13px;'>Este código expira em 5 minutos. Não compartilhe com ninguém.</p>
         </body></html>
     ";
-    $mail->AltBody = "Valide seu e-mail: {$linkConfirmacao}. Expira em 24 horas.";
+    $mail->AltBody = "Seu código de verificação do Bazar Online: {$codigo}. Expira em 5 minutos.";
     $mail->send();
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'mensagem' => 'Não foi possível enviar o e-mail de validação.']);
     exit;
 }
 
-echo json_encode(['success' => true, 'mensagem' => 'Cadastro realizado! Verifique seu e-mail para confirmar.']);
+// Devolve o token pendente na resposta
+echo json_encode([
+    'success'       => true,
+    'pending_token' => $pendingToken, 
+    'mensagem'      => 'Código de verificação enviado ao e-mail!'
+]);

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar Online - Editar Publicação</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+
+<body class="auth-page">
+
+<div class="app-header">
+    <a href="perfil.html" class="header-link btn-light">← Voltar ao Perfil</a>
+</div>
+
+<div class="page-main">
+    <div class="box">
+        <h2>Editar Publicação</h2>
+        <p id="feedback"></p>
+
+        <div id="loadingMsg" style="color: var(--color-muted); font-size: 14px;">Carregando dados da roupa...</div>
+
+        <form id="editarForm" enctype="multipart/form-data" style="display:none;">
+            <input type="hidden" name="id_original" id="id_original">
+
+            <label for="edit_titulo">Título da doação</label>
+            <input type="text" id="edit_titulo" name="titulo" maxlength="120" placeholder="Ex: Blusa de frio infantil" required>
+
+            <label for="edit_tipo">Tipo da roupa</label>
+            <input type="text" id="edit_tipo" name="tipo" placeholder="Ex: Camiseta, Calça, Jaqueta" required>
+
+            <label for="edit_tamanho">Tamanho</label>
+            <select id="edit_tamanho" name="tamanho" required>
+                <option value="">Selecione</option>
+                <option value="PP">PP</option>
+                <option value="P">P</option>
+                <option value="M">M</option>
+                <option value="G">G</option>
+                <option value="GG">GG</option>
+                <option value="XG">XG</option>
+            </select>
+
+            <label for="edit_sexo">Sexo</label>
+            <select id="edit_sexo" name="sexo" required>
+                <option value="Masculino">Masculino</option>
+                <option value="Feminino">Feminino</option>
+                <option value="Unissex">Unissex</option>
+            </select>
+
+            <label for="edit_estado">Estado</label>
+            <select id="edit_estado" name="estado" required>
+                <option value="Novo">Novo</option>
+                <option value="Semi-Novo">Semi-Novo</option>
+                <option value="Usado">Usado</option>
+            </select>
+
+            <label for="edit_local">Local da doação</label>
+            <input type="text" id="edit_local" name="local_doacao" placeholder="Ex: Centro, São Paulo" required>
+
+            <label for="edit_foto">Nova foto da peça <small style="font-weight:normal; color:var(--color-muted);">(obrigatória para garantir a atualização)</small></label>
+            <input type="file" id="edit_foto" name="foto" accept="image/jpeg,image/png,image/webp" required>
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <a href="perfil.html" class="btn btn-block" style="background:var(--color-muted); flex:1; display:flex; align-items:center; justify-content:center; text-decoration:none;">Cancelar</a>
+                <button type="submit" class="btn btn-block" style="flex:1;">Atualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+    import { api, auth } from '../assets/js/api.js';
+
+    if (!auth.estaLogado()) {
+        window.location.href = 'login.html';
+    }
+
+    const roupaData = JSON.parse(sessionStorage.getItem('bazar_editar_roupa') || 'null');
+    const feedback  = document.getElementById('feedback');
+    const loadingMsg = document.getElementById('loadingMsg');
+    const form       = document.getElementById('editarForm');
+
+    function setFeedback(msg, status = 'muted') {
+        feedback.className = `feedback feedback-${status}`;
+        feedback.textContent = msg;
+    }
+
+    if (!roupaData) {
+        loadingMsg.textContent = 'Nenhuma roupa selecionada para edição.';
+        loadingMsg.style.color = 'var(--color-danger)';
+    } else {
+        // Preenche os campos com os dados existentes
+        document.getElementById('id_original').value   = roupaData.id;
+        document.getElementById('edit_titulo').value   = roupaData.titulo || '';
+        document.getElementById('edit_tipo').value     = roupaData.tipo || '';
+        document.getElementById('edit_tamanho').value  = roupaData.tamanho || '';
+        document.getElementById('edit_sexo').value     = roupaData.sexo || '';
+        document.getElementById('edit_estado').value   = roupaData.estado || '';
+        document.getElementById('edit_local').value    = roupaData.local_doacao || '';
+
+        loadingMsg.style.display = 'none';
+        form.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return;
+        }
+        form.classList.add('was-validated');
+
+        setFeedback('Atualizando publicação...', 'muted');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+
+        try {
+            const formData = new FormData(form);
+            const response = await api.editarRoupa(formData);
+
+            if (response.success) {
+                setFeedback(response.mensagem || 'Roupa atualizada com sucesso!', 'success');
+                sessionStorage.removeItem('bazar_editar_roupa');
+                setTimeout(() => {
+                    window.location.href = 'perfil.html';
+                }, 1200);
+            } else {
+                setFeedback(response.mensagem || 'Erro ao atualizar roupa.', 'error');
+                submitBtn.disabled = false;
+            }
+        } catch (err) {
+            console.error(err);
+            setFeedback('Erro interno ao conectar com o servidor.', 'error');
+            submitBtn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>

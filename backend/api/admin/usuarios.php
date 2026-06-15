@@ -1,16 +1,10 @@
 <?php
 /**
- * GET  /api/admin/usuarios.php         — lista todos os usuários
- * POST /api/admin/usuarios.php         — remove ou promove usuário
+ * GET  /api/admin/usuarios.php  — lista usuários comuns
+ * POST /api/admin/usuarios.php  — remove usuário (action=remover + id)
  *
  * Requer JWT de admin.
- * Lógica extraída de admin_usuarios.php.
- *
- * Header: Authorization: Bearer <token>  (admin)
- *
- * POST body (uma das duas ações):
- *   action=remover  + id
- *   action=promover + id
+ * A promoção de usuários foi removida — admins são gerenciados diretamente no banco.
  */
 
 require_once __DIR__ . '/../../config/app.php';
@@ -28,9 +22,7 @@ if ($conn->connect_error) {
     exit;
 }
 
-db_ensure_usuario_schema($conn);
-
-// ─── GET: listar usuários ────────────────────────────────────────────────────
+// ─── GET: listar usuários comuns ──────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $result   = $conn->query("CALL sp_listar_usuarios()");
     $usuarios = [];
@@ -39,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $usuarios[] = $row;
         }
     }
+    while ($conn->next_result()) { }
     $conn->close();
     echo json_encode(['success' => true, 'usuarios' => $usuarios]);
     exit;
@@ -59,7 +52,7 @@ if ($id <= 0) {
     exit;
 }
 
-// Busca o usuário
+// Busca o usuário para confirmar que existe
 $stmtU = $conn->prepare("CALL sp_buscar_usuario_por_id(?)");
 $stmtU->bind_param("i", $id);
 $stmtU->execute();
@@ -73,41 +66,15 @@ if (!$usuario) {
     exit;
 }
 
-if ($action === 'promover') {
-    if ((int) $usuario['is_admin'] === 1) {
-        echo json_encode(['success' => false, 'mensagem' => 'Este usuário já é admin.']);
-        exit;
-    }
-
-    $stmt = $conn->prepare("CALL sp_promover_usuario(?)");
-    $stmt->bind_param("i", $id);
-    $ok = $stmt->execute();
-    $stmt->close();
-    while ($conn->next_result()) { }
-
-    if ($ok) {
-        app_log_event('Promoção admin', 'Usuário promovido a admin.', $id, $usuario['nome'], $usuario['email']);
-        echo json_encode(['success' => true, 'mensagem' => 'Usuário promovido a admin com sucesso.']);
-    } else {
-        echo json_encode(['success' => false, 'mensagem' => 'Não foi possível promover o usuário.']);
-    }
-    exit;
-}
-
 if ($action === 'remover') {
-    if ((int) $usuario['is_admin'] === 1) {
-        echo json_encode(['success' => false, 'mensagem' => 'Contas admin não podem ser removidas por esta página.']);
-        exit;
-    }
-
-    $stmt = $conn->prepare("CALL sp_excluir_conta(?)");
+    $stmt = $conn->prepare("CALL sp_excluir_usuario_admin(?)");
     $stmt->bind_param("i", $id);
     $ok = $stmt->execute();
     $stmt->close();
     while ($conn->next_result()) { }
 
     if ($ok) {
-        app_log_event('Remoção de usuário', 'Admin removeu um usuário.', $id, $usuario['nome'], $usuario['email']);
+        app_log_event('Remoção de usuário', 'Admin removeu um usuário.', $id, null, $usuario['nome'], $usuario['email']);
         echo json_encode(['success' => true, 'mensagem' => 'Usuário removido com sucesso.']);
     } else {
         echo json_encode(['success' => false, 'mensagem' => 'Não foi possível remover o usuário.']);

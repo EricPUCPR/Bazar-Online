@@ -57,10 +57,9 @@ $userId    = (int) $pending['sub'];
 $userNome  = $pending['nome'];
 $userEmail = $pending['email'];
 
+// JWT stateless: apenas sub (id) e admin. Nome/e-mail são buscados do banco quando necessário.
 $token = jwt_generate([
     'sub'   => $userId,
-    'nome'  => $userNome,
-    'email' => $userEmail,
     'admin' => false,
 ]);
 
@@ -68,6 +67,7 @@ app_log_event(
     'Login',
     'Login de usuário validado por código de e-mail.',
     $userId,
+    null,
     $userNome,
     $userEmail
 );

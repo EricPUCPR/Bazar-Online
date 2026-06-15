@@ -50,7 +50,7 @@ $token = jwt_generate([
     'admin' => true,
 ]);
 
-app_log_event('Login admin', 'Login admin validado por pergunta de segurança.', $adminId, $adminNome, $adminEmail);
+app_log_event('Login admin', 'Login admin validado por pergunta de segurança.', null, $adminId, $adminNome, $adminEmail);
 
 echo json_encode([
     'success'  => true,

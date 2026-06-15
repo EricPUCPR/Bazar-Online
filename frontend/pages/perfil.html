@@ -9,39 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/app.css">
-    <style>
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-        }
-        .profile-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding: 12px;
-            background-color: #f0f4f8; 
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .btn-deletar-campo {
-            background: none;
-            border: none;
-            color: #ff4d4d;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: none;
-            padding-left: 10px;
-        }
-        .btn-deletar-campo:hover {
-            color: #ff0000;
-            font-weight: bold;
-        }
-        .admin-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px dashed var(--color-border);
-        }
-    </style>
+
 </head>
 
 <body class="profile-page">
@@ -125,6 +93,14 @@
             <div id="userArea" style="display: none; margin-top: 20px;">
                 <button id="btnExcluirConta" class="btn btn-block btn-danger">Excluir minha conta</button>
             </div>
+
+            <!-- Seção de roupas publicadas -->
+            <div id="userClothesSection" style="margin-top: 30px; border-top: 2px dashed var(--color-border); padding-top: 20px;">
+                <h3 style="margin-top: 0; color: var(--color-brand);">Minhas Roupas Publicadas</h3>
+                <div id="userClothesList" style="margin-top: 15px;">
+                    <p style="color: var(--color-muted); font-size: 13px;">Carregando suas publicações...</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -175,6 +151,16 @@
         feedback.textContent = message;
     }
 
+    function escapeHtml(value) {
+        if (!value) return "";
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     async function carregarPerfil() {
         try {
             const response = await api.obterPerfil();
@@ -203,6 +189,87 @@
                 } else {
                     adminArea.style.display = "none";
                     userArea.style.display = "block";
+                }
+
+                // Renderizar roupas publicadas pelo usuário
+                const userClothesList = document.getElementById("userClothesList");
+                const API_UPLOADS_BASE = 'http://localhost:8001/';
+
+                if (response.roupas && response.roupas.length > 0) {
+                    userClothesList.innerHTML = response.roupas.map(roupa => {
+                        const imgSrc = roupa.foto_path
+                            ? (roupa.foto_path.startsWith('http') ? roupa.foto_path : `${API_UPLOADS_BASE}storage/${roupa.foto_path}`)
+                            : '';
+
+                        // status: 'disponivel' | 'doado' | 'editado' | 'deletado'
+                        const st = roupa.status || 'disponivel';
+                        const disponivel = st === 'disponivel';
+                        const statusMap = {
+                            disponivel: { cls: 'status-disponivel', txt: 'Disponível' },
+                            doado:      { cls: 'status-doada',      txt: 'Doada' },
+                            editado:    { cls: 'status-editado',    txt: 'Editada' },
+                            deletado:   { cls: 'status-doada',      txt: 'Removida' },
+                        };
+                        const { cls: statusClass, txt: statusText } = statusMap[st] || statusMap.disponivel;
+
+                        const acoesHtml = disponivel ? `
+                            <div class="roupa-acoes">
+                                <button class="btn-roupa-acao btn-editar-roupa" data-id="${roupa.id}" data-roupa='${JSON.stringify(roupa)}' title="Editar publicação">✏️</button>
+                                <button class="btn-roupa-acao btn-deletar-roupa" data-id="${roupa.id}" title="Remover publicação">🗑️</button>
+                            </div>` : '';
+
+                        return `
+                            <div class="roupa-item${disponivel ? '' : ' roupa-indisponivel'}">
+                                <div class="roupa-img-wrap">
+                                    ${imgSrc ? `<img src="${imgSrc}" alt="${escapeHtml(roupa.titulo || roupa.tipo)}" class="roupa-img">` : `<div class="roupa-img" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-muted);text-align:center;">Sem foto</div>`}
+                                </div>
+                                <div class="roupa-details">
+                                    <h4>${escapeHtml(roupa.titulo || roupa.tipo)}</h4>
+                                    <div>Tamanho: <b>${escapeHtml(roupa.tamanho || 'N/A')}</b> | Gênero: <b>${escapeHtml(roupa.sexo || 'N/A')}</b></div>
+                                    <div style="margin-top: 3px; color: var(--color-muted); font-size: 11px;">Estado: ${escapeHtml(roupa.estado || 'N/A')} • ${new Date(roupa.criado_em).toLocaleDateString('pt-BR')}</div>
+                                </div>
+                                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                                    <span class="roupa-status ${statusClass}">${statusText}</span>
+                                    ${acoesHtml}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    // Delegação de eventos — botões de ação
+                    userClothesList.addEventListener('click', async (e) => {
+                        const btnDel = e.target.closest('.btn-deletar-roupa');
+                        const btnEdit = e.target.closest('.btn-editar-roupa');
+
+                        if (btnDel) {
+                            if (!confirm('Tem certeza que deseja remover esta publicação? Ela ficará marcada como indisponível.')) return;
+                            const id = btnDel.dataset.id;
+                            btnDel.disabled = true;
+                            try {
+                                const res = await api.pausarRoupaUsuario(id);
+                                if (res.success) {
+                                    setFeedback(res.mensagem || 'Publicação removida.', 'success');
+                                    carregarPerfil();
+                                } else {
+                                    setFeedback(res.mensagem || 'Erro ao remover.', 'error');
+                                    btnDel.disabled = false;
+                                }
+                            } catch {
+                                setFeedback('Erro ao conectar com o servidor.', 'error');
+                                btnDel.disabled = false;
+                            }
+                        }
+
+                        if (btnEdit) {
+                            const roupaData = JSON.parse(btnEdit.dataset.roupa);
+                            // Salva dados da roupa no sessionStorage e redireciona
+                            sessionStorage.setItem('bazar_editar_roupa', JSON.stringify(roupaData));
+                            window.location.href = 'editar-roupa.html';
+                        }
+                    }, { once: false });
+
+                } else {
+                    userClothesList.innerHTML = '<p style="color: var(--color-muted); font-size: 13px; text-align: center;">Você ainda não publicou nenhuma roupa.</p>';
                 }
 
                 profileLoading.style.display = "none";

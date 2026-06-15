@@ -82,7 +82,7 @@ foreach ($ids as $id) {
     while ($conn->next_result()) { }
 }
 
-$ativas = array_values(array_filter($roupas, fn($r) => (int) $r['pausado'] !== 1));
+$ativas = array_values(array_filter($roupas, fn($r) => ($r['status'] ?? 'disponivel') === 'disponivel'));
 
 if (count($ativas) === 0) {
     echo json_encode(['success' => false, 'mensagem' => 'Nenhuma roupa ativa encontrada.']);
@@ -164,6 +164,6 @@ foreach ($idsEnviados as $idEnv) {
 
 $conn->close();
 
-app_log_event('Finalização de doação', 'Usuário finalizou uma doação.', $userId, $userNome, $userEmail);
+app_log_event('Finalização de doação', 'Usuário finalizou uma doação.', $userId, null, $userNome, $userEmail);
 
 echo json_encode(['success' => true, 'mensagem' => 'Doação finalizada. Os anunciantes receberam seus dados de contato.']);
