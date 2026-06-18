@@ -6,16 +6,20 @@ CREATE TABLE `usuarios` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `nome` varchar(100) NOT NULL,
   `email` varchar(150) NOT NULL UNIQUE,
-  `telefone` varchar(20) DEFAULT NULL,
+  `telefone` varchar(255) DEFAULT NULL,
   `endereco` varchar(200) DEFAULT NULL,
   `data_nascimento` date DEFAULT NULL,
   `senha` varchar(255) NOT NULL,
+  `telegram_chat_id` varchar(100) DEFAULT NULL, 
+  `pergunta_seguranca` varchar(255) DEFAULT NULL, 
+  `resposta_seguranca_hash` varchar(255) DEFAULT NULL,
   `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
   `recuperacao_token` varchar(255) DEFAULT NULL,
   `recuperacao_expira` datetime DEFAULT NULL,
   `email_verificado` tinyint(1) NOT NULL DEFAULT 0,
   `confirmacao_token` varchar(128) DEFAULT NULL,
   `confirmacao_expira` datetime DEFAULT NULL
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `roupas` (
