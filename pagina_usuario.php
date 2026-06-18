@@ -9,7 +9,6 @@ if ($conn->connect_error) {
     exit("Erro de conexão com o banco.");
 }
 
-// Se a função existir na sua config, garante o schema
 if (function_exists('db_ensure_usuario_schema')) {
     db_ensure_usuario_schema($conn);
 }
