@@ -21,7 +21,6 @@ if (!isset($_SESSION['usuario_id'])) {
 
 $id = (int) $_SESSION['usuario_id'];
 
-// --- EXCLUSÃO DE CAMPOS ---
 if (isset($_GET['excluir_campo'])) {
     $campoParaApagar = $_GET['excluir_campo'];
     $camposPermitidos = ['telefone', 'endereco', 'data_nascimento']; 
@@ -38,11 +37,9 @@ if (isset($_GET['excluir_campo'])) {
     }
 }
 
-// --- BUSCA DOS DADOS DO USUÁRIO ---
 $query = "SELECT nome, email, telefone, endereco, data_nascimento, is_admin, telegram_chat_id, pergunta_seguranca FROM usuarios WHERE id = ? LIMIT 1";
 $stmt = $conn->prepare($query);
 
-// Proteção caso falte colunas no banco de dados
 if (!$stmt) {
     die("Erro no banco de dados. Você executou o 'ALTER TABLE' para adicionar as colunas is_admin, telegram_chat_id, etc.? Erro técnico: " . $conn->error);
 }
@@ -53,7 +50,6 @@ $result = $stmt->get_result();
 $user = $result ? $result->fetch_assoc() : null;
 $stmt->close();
 
-// --- DESCRIPTOGRAFIA DO TELEFONE ---
 $telefoneExibicao = 'Não informado';
 
 if ($user && !empty($user['telefone'])) {
@@ -80,7 +76,6 @@ if ($user && !empty($user['telefone'])) {
     }
 }
 
-// --- LÓGICA DE ADMIN ---
 $isAdminAccount = (int) ($user['is_admin'] ?? 0) === 1;
 $isAdmin = $isAdminAccount && !empty($_SESSION['admin_logado']);
 
@@ -92,7 +87,6 @@ if ($isAdminAccount && !$isAdmin) {
 
 $mensagemPerfil = "";
 
-// --- ATUALIZAÇÃO DO TELEGRAM ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['telegram_chat_id'])) {
     $telegramChatId = trim($_POST['telegram_chat_id']);
 
@@ -112,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['telegram_chat_id'])) 
     if ($stmt) $stmt->close();
 }
 
-// --- ATUALIZAÇÃO DA PERGUNTA DE SEGURANÇA ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pergunta_seguranca'], $_POST['resposta_seguranca'])) {
     $pergunta = trim($_POST['pergunta_seguranca']);
     $resposta = trim($_POST['resposta_seguranca']);
@@ -138,7 +131,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pergunta_seguranca'],
     }
 }
 
-// --- EXCLUSÃO DE CONTA ---
 if (isset($_GET['excluir'])) {
     if ($isAdmin) {
         $mensagemPerfil = "A conta admin não pode ser excluída por esta página.";
