@@ -54,7 +54,6 @@ $telefoneExibicao = 'Não informado';
 if ($user && !empty($user['telefone'])) {
     $partesTelefone = explode(':', $user['telefone']);
     
-    // Verifica se está no formato criptografado (IV:Criptograma)
     if (count($partesTelefone) === 2) {
         $chaveEnv = env_value('CHAVE_SIMETRICA'); 
         $chaveBd = hash('sha256', $chaveEnv, true);
@@ -70,7 +69,6 @@ if ($user && !empty($user['telefone'])) {
             $telefoneExibicao = 'Erro ao ler telefone';
         }
     } else {
-        // Caso o banco tenha um número antigo que não foi criptografado
         $telefoneExibicao = $user['telefone'];
     }
 }
