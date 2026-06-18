@@ -49,193 +49,6 @@
     } else {
         db_ensure_usuario_schema($conn);
     }
-
-    if ($_SERVER["REQUEST_METHOD"] == "POST" && !$conn->connect_error) {
-
-        $senha = $_POST["senha"];
-        $confirmar = $_POST["confirmar_senha"];
-        $nome = $_POST["nome"] ?? "";
-        $email = trim($_POST["email"] ?? "");
-        $telefone = $_POST["telefone"] ?? "";
-        $endereco = $_POST["endereco"] ?? "";
-        $datanascimento = $_POST["datanascimento"] ?? "";
-
-        $senhaForte = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/";
-        $senhaNormalizada = normalizarTexto($senha);
-        $partesNome = [];
-        foreach (preg_split('/\s+/', normalizarTexto($nome)) as $parte) {
-            if (strlen($parte) >= 3) {
-                $partesNome[] = $parte;
-            }
-        }
-        $contemNome = false;
-
-        foreach ($partesNome as $parte) {
-            if (strpos($senhaNormalizada, $parte) !== false) {
-                $contemNome = true;
-                break;
-            }
-        }
-
-        $dataAtual = new DateTime();
-        $dataNascObj = DateTime::createFromFormat('Y-m-d', $datanascimento);
-        $idade = $dataNascObj ? $dataNascObj->diff($dataAtual)->y : -1;
-
-        if (!isset($_POST["termos"])) {
-            $erro = "Aceite os termos de uso.";
-        } elseif (!preg_match('/^[a-zA-ZÀ-ÿ\s]{8,}$/u', $nome)) {
-            $erro = "O nome deve conter apenas letras e ter no mínimo 8 caracteres.";
-        } elseif (!preg_match('/^[a-zA-Z0-9._]+@[a-zA-Z]+(\.[a-zA-Z]+)+$/', $email)) {
-            $erro = "O formato do e-mail é inválido.";
-        } elseif (!$dataNascObj || $idade < 18 || $idade > 120 || $dataNascObj > $dataAtual) {
-            $erro = "A idade deve ser entre 18 e 120 anos.";
-        } elseif ($senha !== $confirmar) {
-            $erro = "As senhas não coincidem!";
-        } elseif (!preg_match($senhaForte, $senha)) {
-            $erro = "Senha fraca!";
-        } elseif (preg_match($regexSequenciaNumerica, $senha)) {
-            $erro = "A senha não pode conter sequência de números.";
-        } elseif ($contemNome) {
-            $erro = "A senha não pode conter o seu nome.";
-        } elseif (!validar_recaptcha($_POST['g-recaptcha-response'] ?? '')) { 
-            $erro = "Por favor, confirme que você não é um robô.";
-        } else {
-            $idExistente = null;
-            $jaVerificado = 0;
-            $stmtBusca = $conn->prepare("SELECT id, email_verificado FROM usuarios WHERE email = ? LIMIT 1");
-            if ($stmtBusca) {
-                $stmtBusca->bind_param("s", $email);
-                $stmtBusca->execute();
-                $resBusca = $stmtBusca->get_result();
-                if ($resBusca && $resBusca->num_rows > 0) {
-                    $existente = $resBusca->fetch_assoc();
-                    $idExistente = (int) $existente["id"];
-                    $jaVerificado = (int) ($existente["email_verificado"] ?? 0);
-                }
-                $stmtBusca->close();
-            }
-
-            if ($idExistente && $jaVerificado === 1) {
-                echo "<script>window.location.href='login.html?status=email_ja_cadastrado';</script>";
-                exit;
-            }
-
-            $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
-            $tokenConfirmacao = bin2hex(random_bytes(32));
-            $expiraConfirmacao = date("Y-m-d H:i:s", strtotime("+24 hours"));
-            $idCadastro = $idExistente;
-            $cadastroNovo = !$idExistente;
-
-            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
-            $host = $_SERVER['HTTP_HOST'];
-            $path = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
-            $linkConfirmacao = $protocol . "://" . $host . $path . "/confirmar_cadastro_email.php?token=" . $tokenConfirmacao;
-
-            if ($idExistente && $jaVerificado === 0) {
-                // Reenvio: atualiza cadastro pendente.
-                $stmtPend = $conn->prepare("
-                    UPDATE usuarios
-                    SET nome = ?,
-                        telefone = ?,
-                        endereco = ?,
-                        data_nascimento = ?,
-                        senha = ?,
-                        confirmacao_token = ?,
-                        confirmacao_expira = ?
-                    WHERE id = ?
-                ");
-                if ($stmtPend) {
-                    $stmtPend->bind_param(
-                        "sssssssi",
-                        $nome,
-                        $telefone,
-                        $endereco,
-                        $datanascimento,
-                        $senhaHash,
-                        $tokenConfirmacao,
-                        $expiraConfirmacao,
-                        $idExistente
-                    );
-                    if (!$stmtPend->execute()) {
-                        $erro = "Erro ao atualizar cadastro pendente! " . $stmtPend->error;
-                    }
-                    $stmtPend->close();
-                } else {
-                    $erro = "Erro ao preparar atualização do cadastro! " . $conn->error;
-                }
-            } else {
-                // Novo cadastro.
-                $stmtCria = $conn->prepare("
-                    INSERT INTO usuarios
-                        (nome, email, telefone, endereco, data_nascimento, senha, email_verificado, confirmacao_token, confirmacao_expira)
-                    VALUES
-                        (?, ?, ?, ?, ?, ?, 0, ?, ?)
-                ");
-                if ($stmtCria) {
-                    $stmtCria->bind_param(
-                        "ssssssss",
-                        $nome,
-                        $email,
-                        $telefone,
-                        $endereco,
-                        $datanascimento,
-                        $senhaHash,
-                        $tokenConfirmacao,
-                        $expiraConfirmacao
-                    );
-                    if (!$stmtCria->execute()) {
-                        $erro = "Erro ao cadastrar! " . $stmtCria->error;
-                    } else {
-                        $idCadastro = (int) $conn->insert_id;
-                    }
-                    $stmtCria->close();
-                } else {
-                    $erro = "Erro ao preparar cadastro! " . $conn->error;
-                }
-            }
-
-            if ($erro === "") {
-                app_log_event(
-                    $cadastroNovo ? 'Criação de conta' : 'Atualização de cadastro pendente',
-                    $cadastroNovo
-                        ? 'Usuário iniciou cadastro e validação de e-mail.'
-                        : 'Usuário atualizou um cadastro pendente de validação.',
-                    $idCadastro,
-                    $nome,
-                    $email
-                );
-
-                $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-                try {
-                    configure_mailer($mail);
-                    $mail->addAddress($email);
-                    $mail->isHTML(true);
-                    $mail->Subject = "Valide seu e-mail - Bazar Online";
-                    $mail->Body = "
-                    <html>
-                    <head><meta charset='UTF-8'></head>
-                    <body>
-                        <p>Seu cadastro foi criado. Falta apenas validar seu e-mail.</p>
-                        <p>
-                            <a href='$linkConfirmacao'>
-                                Validar e-mail
-                            </a>
-                        </p>
-                        <p>Este link expira em 24 horas.</p>
-                    </body>
-                    </html>
-                ";
-                    $mail->AltBody = "Para validar seu e-mail, acesse: {$linkConfirmacao}. Este link expira em 24 horas.";
-                    $mail->send();
-
-                    echo "<script>window.location.href='login.html?status=confirmacao_cadastro_enviada';</script>";
-                    exit;
-                } catch (\PHPMailer\PHPMailer\Exception $e) {
-                    $erro = "Não foi possível enviar o e-mail de validação.";
-                }
-            }
-        }
-    }
     ?>
 
     <div class="page-main">
@@ -451,10 +264,11 @@
                 telefone: document.getElementById("telefone").value,
                 endereco: document.getElementById("endereco").value,
                 senha: document.getElementById("senha").value,
-                confirmar_senha: document.getElementById("confirmar_senha").value
+                confirmar_senha: document.getElementById("confirmar_senha").value,
+                termos: document.getElementById("termos").checked ? "on" : "",
+                "g-recaptcha-response": grecaptcha.getResponse()
             };
 
-            console.log("Dados originais antes da criptografia:", dadosCadastro);
 
             const publicKeyDer = await fetch("../crypto/public_key.php")
                 .then(response => response.arrayBuffer());
@@ -484,8 +298,6 @@
             console.log("Chave AES de sessão gerada:", aesKey);
 
             const aesRaw = await crypto.subtle.exportKey("raw", aesKey);
-
-            console.log("Chave AES exportada em bytes:", arrayBufferToBase64(aesRaw));
 
             const iv = crypto.getRandomValues(new Uint8Array(12));
 
@@ -528,7 +340,11 @@
 
             console.log("Resposta do back:", resultado);
 
-            alert(resultado.mensagem || "Processo finalizado.");
+            if (resultado.success && resultado.redirect) {
+                window.location.href = resultado.redirect;
+            } else {
+                alert(resultado.mensagem || "Processo finalizado.");
+            }
         }
     </script>
 

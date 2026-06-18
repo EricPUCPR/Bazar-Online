@@ -56,11 +56,49 @@ function app_load_env(): void
 function env_value(string $key, string $default = ''): string
 {
     $value = $_ENV[$key] ?? getenv($key);
+
     if ($value === false || $value === null) {
         return $default;
     }
 
-    return (string) $value;
+    $value = (string) $value;
+
+    if (strpos($value, 'ENC:') === 0) {
+        return decrypt_env_value(substr($value, 4));
+    }
+
+    return $value;
+}
+
+function decrypt_env_value(string $valorCriptografado): string
+{
+    $chaveBase64 = $_SERVER['ENV_AES_KEY'] ?? $_ENV['ENV_AES_KEY'] ?? getenv('ENV_AES_KEY') ?? false;
+
+    if (!$chaveBase64) {
+        die('Chave ENV_AES_KEY não configurada no Apache e nem no .env.');
+    }
+
+    $chave = base64_decode($chaveBase64);
+    $dados = base64_decode($valorCriptografado);
+
+    $iv = substr($dados, 0, 12);
+    $tag = substr($dados, 12, 16);
+    $criptografado = substr($dados, 28);
+
+    $valorOriginal = openssl_decrypt(
+        $criptografado,
+        'aes-256-gcm',
+        $chave,
+        OPENSSL_RAW_DATA,
+        $iv,
+        $tag
+    );
+
+    if ($valorOriginal === false) {
+        die('Erro ao descriptografar variável de ambiente. Verifique se a ENV_AES_KEY está correta.');
+    }
+
+    return $valorOriginal;
 }
 
 function env_bool(string $key, bool $default = false): bool
@@ -337,80 +375,7 @@ function e($value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
-function app_load_env_encrypted(): void
-{
-    static $loaded = false;
-    if ($loaded) {
-        return;
-    }
-
-    $loaded = true;
-
-    $path = dirname(__DIR__) . '/.env.enc';
-
-    if (!is_readable($path)) {
-        app_load_env();
-        return;
-    }
-
-    $chaveBase64 = getenv('ENV_AES_KEY');
-
-    if (!$chaveBase64) {
-        die('Erro de configuração da aplicação.');
-    }
-
-    $chave = base64_decode($chaveBase64);
-    $dados = base64_decode(file_get_contents($path));
-
-    $iv = substr($dados, 0, 12);
-    $tag = substr($dados, 12, 16);
-    $criptografado = substr($dados, 28);
-
-    $conteudo = openssl_decrypt(
-        $criptografado,
-        'aes-256-gcm',
-        $chave,
-        OPENSSL_RAW_DATA,
-        $iv,
-        $tag
-    );
-
-    if ($conteudo === false) {
-        die('Erro de configuração da aplicação.');
-    }
-
-    foreach (explode("\n", $conteudo) as $line) {
-        $line = trim($line);
-
-        if ($line === '' || strpos($line, '#') === 0) {
-            continue;
-        }
-
-        $parts = explode('=', $line, 2);
-
-        if (count($parts) !== 2) {
-            continue;
-        }
-
-        $key = trim($parts[0]);
-        $value = trim($parts[1]);
-
-        $quote = substr($value, 0, 1);
-        if (($quote === '"' || $quote === "'") && substr($value, -1) === $quote) {
-            $value = substr($value, 1, -1);
-            if ($quote === '"') {
-                $value = stripcslashes($value);
-            }
-        }
-
-        $_ENV[$key] = $value;
-        putenv($key . '=' . $value);
-    }
-}
-
-putenv('ENV_AES_KEY=NX6eQsCExOgAKC/v8BtDHcmMn2B/GtBqaG5mHhHVHlU=');
-
-app_load_env_encrypted();
+app_load_env();
 app_configure_errors();
 
 function validar_recaptcha(string $token_resposta): bool
