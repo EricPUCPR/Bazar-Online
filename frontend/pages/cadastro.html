@@ -60,7 +60,7 @@
         <div class="box">
             <h2>Cadastro</h2>
 
-            <form id="formCadastro">
+            <form id="formCadastro" method="POST">
                 <input type="text" id="nome" name="nome" placeholder="Nome completo" pattern="[a-zA-ZÀ-ÿ\s]{3,}"
                     title="O nome deve conter apenas letras e ter no mínimo 3 caracteres." required>
 
@@ -70,9 +70,10 @@
                 <input type="date" name="datanascimento" id="datanascimento" title="Data invalida" required>
 
                 <input type="tel" id="telefone" name="telefone" placeholder="Telefone" inputmode="numeric"
-                    maxlength="15" required>
+                    maxlength="15" pattern="(\(?\d{2}\)?)(\s?)(\d{5})(-?)(\d{4})" title="O formato do telefone é inválido." required>
 
-                <input type="text" name="endereco" id="endereco" placeholder="Endereço" required>
+                <input type="text" name="endereco" id="endereco" placeholder="Endereço" 
+                    pattern="[a-zA-ZÀ-ÿ0-9\s.,\-]{5,64}" title="O endereço deve conter no mínimo 5 caracteres." required>
 
                 <div class="password-wrapper">
                     <input type="password" id="senha" name="senha" placeholder="Senha" required>
@@ -99,7 +100,7 @@
 
                 <div class="terms-check">
                     <label>
-                        <input type="checkbox" id="termos" name="termos" required>
+                        <input type="checkbox" id="termos" name="termos" title="Você deve aceitar os termos de uso" required>
                         Eu aceito os <a href="legal/terms/index.html" target="_blank">termos de uso</a>
                     </label>
                 </div>
@@ -119,6 +120,7 @@
 
     <script type="module">
         import { api } from '../assets/js/api.js';
+        import { normalizarTelefone,emojiSenha,setFeedback,validaSenhaCadastro,aplicarMascaraTelefone } from '../assets/js/func.js';
 
         const senha = document.getElementById("senha");
         const confirmarSenha = document.getElementById("confirmar_senha");
@@ -129,10 +131,8 @@
         const form = document.getElementById("formCadastro");
         const captchaArea = document.getElementById("captchaArea");
         const feedback = document.getElementById("feedback");
-
         const btnToggleSenha = document.getElementById("btnToggleSenha");
         const btnToggleConfirmar = document.getElementById("btnToggleConfirmar");
-
 
         // Configura datas limites para aniversário (18 a 120 anos)
         const dt = new Date();
@@ -145,115 +145,43 @@
         datanascimento.max = `${maxYear}-${month}-${day}`;
         datanascimento.min = `${minYear}-${month}-${day}`;
 
-        // Mostra/Oculta senhas
-        function setupTogglePassword(btn, targetId) {
-            btn.addEventListener("click", () => {
-                const campo = document.getElementById(targetId);
-                if (campo.type === "password") {
-                    campo.type = "text";
-                    btn.textContent = "🙈";
-                } else {
-                    campo.type = "password";
-                    btn.textContent = "👁";
-                }
-            });
-        }
-        setupTogglePassword(btnToggleSenha, "senha");
-        setupTogglePassword(btnToggleConfirmar, "confirmar_senha");
-
-        function setFeedback(message, status = "muted") {
-            feedback.className = `feedback feedback-${status}`;
-            feedback.textContent = message;
-        }
-
-        function normalizarTexto(texto) {
-            texto = trimString(texto).toLowerCase();
-            texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            return texto.replace(/[^a-z0-9 ]/g, "");
-        }
-
-        function trimString(str) {
-            return String(str ?? "").trim();
-        }
-
-        function validarCaptchaVisibilidade() {
-            const val = senha.value;
-            const senhaNormalizada = normalizarTexto(val).replace(/\s/g, "");
-
-            const partesNome = normalizarTexto(nome.value)
-                .split(/\s+/)
-                .filter((parte) => parte.length >= 3);
-
-            const temSequenciaNumerica = /(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)/.test(val);
-            const contemNome = partesNome.some((parte) => senhaNormalizada.includes(parte));
-
-            const checks = [
-                val.length >= 8,
-                /[A-Z]/.test(val),
-                /[a-z]/.test(val),
-                /\d/.test(val),
-                /[@$!%*?&]/.test(val),
-                !temSequenciaNumerica,
-                !contemNome
-            ];
-
-            const senhasConferem = (val === confirmarSenha.value && val !== "");
-            const requisitosSenhaOk = checks.every(c => c);
-            const formValido = form.checkValidity();
-
-            if (formValido && senhasConferem && requisitosSenhaOk && termos.checked) {
-                captchaArea.style.display = "flex";
-            } else {
-                captchaArea.style.display = "none";
-            }
-
-            return checks;
-        }
-
+        // emogi das caixas de senha
+        btnToggleSenha.addEventListener("click", () => emojiSenha(btnToggleSenha, senha)); 
+        btnToggleConfirmar.addEventListener("click", () => emojiSenha(btnToggleConfirmar, confirmarSenha));
+        
+        // quando o campo de senha sofre alguma alteracao
         senha.addEventListener("input", () => {
-            const val = senha.value;
-            const checks = validarCaptchaVisibilidade();
-
-            if (val.length === 0 || checks.every(c => c)) {
+            //faz validacao de todos os requisitos de senha
+            const checks = validaSenhaCadastro(form, captchaArea);
+            
+            if (senha.value.length > 0 || checks.every(c => c)) { //se senha validada 100%
                 requisitos.classList.remove("is-visible");
             } else {
                 requisitos.classList.add("is-visible");
             }
 
-            document.getElementById("r1").className = checks[0] ? "ok" : "erro";
-            document.getElementById("r2").className = checks[1] ? "ok" : "erro";
-            document.getElementById("r3").className = checks[2] ? "ok" : "erro";
-            document.getElementById("r4").className = checks[3] ? "ok" : "erro";
-            document.getElementById("r5").className = checks[4] ? "ok" : "erro";
-            document.getElementById("r6").className = checks[5] ? "ok" : "erro";
-            document.getElementById("r7").className = checks[6] ? "ok" : "erro";
+            // Feedback visual de quais requisitos faltam
+            document.getElementById("r1").className = checks[0] ? "ok" : "erro"; //valida 12 caracteres
+            document.getElementById("r2").className = checks[1] ? "ok" : "erro"; //valida letra maiuscula
+            document.getElementById("r3").className = checks[2] ? "ok" : "erro"; //valida letra minuscula
+            document.getElementById("r4").className = checks[3] ? "ok" : "erro"; //valida numeros
+            document.getElementById("r5").className = checks[4] ? "ok" : "erro"; //valida caracteres especiais
+            document.getElementById("r6").className = checks[5] ? "ok" : "erro"; //valida sequencia numerica
+            document.getElementById("r7").className = checks[6] ? "ok" : "erro"; //valida se contem parte do nome
         });
-
-        nome.addEventListener("input", () => {
-            senha.dispatchEvent(new Event("input"));
-            validarCaptchaVisibilidade();
-        });
-
-        confirmarSenha.addEventListener("input", validarCaptchaVisibilidade);
-        termos.addEventListener("change", validarCaptchaVisibilidade);
-
-        form.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', validarCaptchaVisibilidade);
-        });
-
-        telefone.addEventListener("input", () => {
-            let valor = telefone.value.replace(/\D/g, "").slice(0, 11);
-
-            if (valor.length > 2) {
-                valor = `(${valor.slice(0, 2)}) ${valor.slice(2)}`;
+        
+        form.querySelectorAll('input').forEach(input => { //para cada input do form, adiciona ativa o Listener de input da senha
+            if (input.id !== "senha") {
+                input.addEventListener('input', () => {//se sofrer alteracao, re-validar senha
+                    senha.dispatchEvent(new Event("input"));
+                });
             }
-            if (valor.length > 10) {
-                valor = `${valor.slice(0, 10)}-${valor.slice(10)}`;
-            }
-
-            telefone.value = valor;
         });
 
+        //Deixa telefone bonito enquanto usuario digita
+        telefone.addEventListener("input", () => aplicarMascaraTelefone(telefone));
+
+        // Envio do formulario **************************************###################################################################################
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
@@ -266,11 +194,18 @@
                 }
             }
 
+
             setFeedback("Carregando...");
             form.classList.add('was-validated');
 
             try {
                 const formData = new FormData(form);
+                
+                // altera conteudo do telefone no formulario para telefone pos normalizacao
+                formData.set("telefone", normalizarTelefone(formData.get("telefone")));
+
+
+
                 const response = await api.cadastrar(formData);
 
                 if (response.success) {
@@ -288,6 +223,8 @@
                 setFeedback("Erro ao conectar com o servidor.", "error");
             }
         });
+
+// ***********************************************************************************************
 
         const modal = document.getElementById("modalConfirmacao");
         const formConfirmacao = document.getElementById("formConfirmacaoCodigo");
